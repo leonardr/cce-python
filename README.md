@@ -13,14 +13,14 @@ Libraries](https://exhibits.stanford.edu/copyrightrenewals), and
 
 # Statistics
 
-* There are about 800,000 works where a renewal record would be
+* There are about 760,000 works where a renewal record would be
   necessary for the work to still be in copyright today.
-* Of these, about 19% definitely have a renewal record and are still
+* Of these, about 20% definitely have a renewal record and are still
   in copyright.
 * About 7% _seem_ to have a renewal record, but a manual inspection is
   necessary to make sure.
-* About 74% definitely have no renewal record.
-* About 0.1% don't _seem_ to have a renewal record, but a manual
+* About 72% definitely have no renewal record.
+* About 0.2% don't _seem_ to have a renewal record, but a manual
   inspection is necessary to make sure.
 
 # Generating the Data
@@ -53,14 +53,12 @@ python 5-sort-it-out.py
 
 At the end of this process, you'll see a number of large files in the
 `output` directory. These files represent the work product of each
-step in the process.
-
-The files you're most likely interested in are the `FINAL-` series,
-which represent conclusions about which books were renewed and which
-weren't.
+step in the process. The files you're most likely interested in are
+the `FINAL-` series, which represent this project's final conclusions
+about which books were renewed and which weren't.
 
 If you think there's been a mistake or a bad assumption somewhere in
-this process, it's easy to fix: change the corresponding script,
+this process, it's easy to fix. Change the corresponding script,
 re-run it, then re-run the subsequent scripts to get a new set of
 `FINAL-` files.
 
