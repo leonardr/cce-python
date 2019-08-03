@@ -3,7 +3,8 @@
 This set of Python scripts combines [copyright registration
 data](https://github.com/NYPL/catalog_of_copyright_entries_project)
 with [copyright renewal data](https://github.com/NYPL/cce-renewals/)
-to identify works whose copyright has lapsed.
+to identify works whose copyright has lapsed because a registration
+was not renewed.
 
 The data comes from datasets provided by the New York Public
 Library. These datasets build on work done by [the Internet
