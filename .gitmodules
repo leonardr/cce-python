@@ -1,0 +1,6 @@
+[submodule "renewals"]
+	path = renewals
+	url = https://github.com/NYPL/cce-renewals/
+[submodule "registrations"]
+	path = registrations
+	url = https://github.com/NYPL/catalog_of_copyright_entries_project
