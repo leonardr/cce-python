@@ -222,7 +222,7 @@ are the possible dispositions:
   registration. That's almost certainly the 'real' renewal, and if so,
   this book is still under copyright.
 
-* `Probably renewed (title match).` - There were multiple renewals for
+* `Probably renewed (author match).` - There were multiple renewals for
   the registration ID, and there was no date match, but one of the
   renewals has the same author as this book. That's probably the
   'real' renewal, and if so, this book is still under copyright.
