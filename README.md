@@ -51,11 +51,20 @@ python 4-handle-multiple-renewals.py
 python 5-sort-it-out.py
 ```
 
-At the end of this process, you'll see a number of large files in the
-`output` directory. These files represent the work product of each
-step in the process. The files you're most likely interested in are
-the `FINAL-` series, which represent this project's final conclusions
-about which books were renewed and which weren't.
+The final script's output will look something like this:
+
+```
+output/FINAL-renewed.ndjson: 151270 (19.93%)
+output/FINAL-not-renewed.ndjson: 549863 (72.44%)
+output/FINAL-probably-renewed.ndjson: 56553 (7.45%)
+output/FINAL-probably-not-renewed.ndjson: 1404 (0.18%)
+```
+
+You'll see a number of large files in the `output` directory. These
+files represent the work product of each step in the process. The
+files you're most likely interested in are the `FINAL-` series,
+mentioned above. These files represent this project's final
+conclusions about which books were renewed and which weren't.
 
 If you think there's been a mistake or a bad assumption somewhere in
 this process, it's easy to fix. Change the corresponding script,
@@ -183,3 +192,49 @@ and consolidates them into four files:
 
 These files represent the final product. At this point you can take
 one or more of them and use them in your own research.
+
+# Dispositions
+
+Each JSON object in the `FINAL-` files has a `disposition` key that
+explains this script's final conclusion about its renewal status. Here
+are the possible dispositions:
+
+* `Not renewed.` - No renewal record was found, and there are no
+   other known complicating factors. The copyright on this book has
+   almost certainly lapsed.
+
+* `Renewed.` - One renewal record was found and it's an exact
+   match. This book is almost certainly still under copyright.
+
+* `Not renewed, but has children.` - No renewal record was found, but
+  the original registration referred to _other_ registrations, which
+  complicates things. Depending on the relationship between this
+  registration and the others, parts of this book may still be under
+  copyright.
+
+* `Probably renewed, but registration dates don't match.` - There was
+   a single renewal for the registration ID, but the dates didn't
+   match. This is most likely an error in the digitized data, and the
+   work is almost certainly still under copyright.
+
+* `Renewed (date match).` - There were multiple renewals for the
+  registration ID, but one of them has a date match with the original
+  registration. That's almost certainly the 'real' renewal, and if so,
+  this book is still under copyright.
+
+* `Probably renewed (title match).` - There were multiple renewals for
+  the registration ID, and there was no date match, but one of the
+  renewals has the same author as this book. That's probably the
+  'real' renewal, and if so, this book is still under copyright.
+
+* `Probably renewed (title match).` - There were multiple renewals for
+  the registration ID, and there was no date or author match, but one
+  of the renewals has a close title match for this book. That's
+  probably the 'real' renewal, and if so, this book is still under
+  copyright.
+
+* `Probably not renewed (could not confirm match).` - There were
+   multiple renewals for the registration ID, but none of them seemed
+   actually related to this book. There was no date, author, or title
+   match. It's best to check this one manually to see what happened.
+

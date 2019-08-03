@@ -10,8 +10,10 @@ class Output(object):
         self.out.write(i)
         self.count += 1
 
-    def tally(self):
-        return "%s: %s" % (self.path, self.count)
+    def tally(self, total):
+        return "%s: %s (%.2f%%)" % (
+            self.path, self.count, self.count / float(total) * 100
+        )
         
 probably = Output("probably-renewed")
 probably_not = Output("probably-not-renewed")
@@ -40,5 +42,8 @@ for file in (
         dest = destination(data['disposition'])
         dest.output(i)
 
-for output in yes, no, probably, probably_not:
-    print(output.tally())
+outputs = [yes, no, probably, probably_not]
+total = sum(x.count for x in outputs)
+        
+for output in outputs:
+    print(output.tally(total))

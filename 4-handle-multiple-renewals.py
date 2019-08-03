@@ -42,6 +42,7 @@ class Evaluator(object):
                 # This is very reliable -- it's just that there were
                 # extra renewals in the way.
                 return renewal, "Renewed (date match)."
+        for renewal in self.renewals:
             if self.author_match(renewal):
                 return renewal, "Probably renewed (author match)."
             elif self.title_match(renewal):
@@ -59,7 +60,6 @@ class Evaluator(object):
         if not author:
             return False
         if self.normalize(author) in self.normalized_authors:
-            set_trace()
             return True
         return False
         
