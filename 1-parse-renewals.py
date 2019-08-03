@@ -38,7 +38,7 @@ class Parser(object):
                     renewal_date=renewal_date, author=author, title=title, new_matter=new_matter)
         return data
 
-output = open("output/0-parsed-renewals.ndjson", "w")
+output = open("output/1-parsed-renewals.ndjson", "w")
 for parsed in Parser().process_directory_tree("renewals/data"):
         json.dump(parsed, output)
         output.write("\n")

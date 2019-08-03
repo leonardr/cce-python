@@ -89,6 +89,7 @@ class Parser(object):
         regnums = entry.attrib.get('regnum', '').split()
         uuid = entry.attrib.get('id', None)
         authors = self.xpath(entry, "author/authorName")
+        note = self.xpath1(entry, 'note')
         reg_date = self.date(entry, "regDate") or self.date(entry, 'regdate')
         title = self.xpath1(entry, "title")
         if len(regnums) == 1:
@@ -128,7 +129,7 @@ class Parser(object):
         #    if subtag.tag not in self.seen:
         #        print subtag.tag
         #        self.seen.add(subtag.tag)
-        value = dict(uuid=uuid, regnum=regnum, regnums=regnums, reg_date=reg_date, title=title, authors=authors, publishers=publishers, extra=extra)
+        value = dict(uuid=uuid, regnum=regnum, regnums=regnums, reg_date=reg_date, title=title, authors=authors, publishers=publishers, extra=extra, note=note)
         return value
 
 output = open("output/0-parsed-registrations.ndjson", "w")

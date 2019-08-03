@@ -1,0 +1,64 @@
+# Handle works that were clearly renewed and works that clearly were
+# not.
+#
+# One-to-one regnum match: work was clearly renewed.
+# No regnum match: work was clearly not renewed.
+# Multiple regnum matches: it's complicated, handle it later.
+#
+# Also eliminate from consideration renewals that do not correspond to
+# any registration in the dataset. (They're probably renewals for
+# some other piece of the dataset.)
+from pdb import set_trace
+from collections import defaultdict
+import json
+
+renewals_by_regnum = defaultdict(list)
+seen_regnums = set()
+
+renewals_matched = open("output/3-renewals-with-registrations.ndjson", "w")
+renewals_not_matched = open(
+    "output/3-renewals-with-no-registrations.ndjson", "w"
+)
+renewals_not_yet_matched = open(
+    "output/3-renewals-not-yet-matched.ndjson", "w"
+)
+matched = open("output/3-registrations-with-renewal.ndjson", "w")
+not_matched = open("output/3-registrations-with-no-renewal.ndjson", "w")
+not_yet_matched = open("output/3-registrations-not-yet-matched.ndjson", "w")
+
+for i in open("output/1-parsed-renewals.ndjson"):
+    data = json.loads(i)
+    renewals_by_regnum[data['regnum']].append(data)
+
+for i in open("output/2-registrations-in-range.ndjson"):
+    data = json.loads(i)
+    num = data['regnum']
+    seen_regnums.add(num)
+    renewals = renewals_by_regnum[num]
+    if not renewals:
+        # No renewal.
+        registration_output = not_matched
+        renewal_output = None
+    elif len(renewals) == 1:
+        # One renewal -- this work was definitely renewed.
+        registration_output = matched
+        renewal_output = renewals_matched
+    else:
+        # Too many renewals. Punt until later.
+        registration_output = not_yet_matched
+        renewal_output = renewals_not_yet_matched
+
+    data['renewals'] = renewals
+    json.dump(data, registration_output)
+    registration_output.write("\n")
+    if renewal_output:
+        json.dump({num: renewals}, renewal_output)
+        renewal_output.write("\n")
+        
+
+# Now that we're done, we can write a list of all the renewals that
+# had no associated registration.
+for regnum, renewals in renewals_by_regnum.items():
+    if regnum not in seen_regnums:
+        json.dump({regnum:renewals}, renewals_not_matched)
+        renewals_not_matched.write("\n")

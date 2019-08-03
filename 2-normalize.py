@@ -34,12 +34,12 @@ class Processor(object):
     CUTOFF_YEAR = datetime.datetime.utcnow().year - 95
 
     def __init__(self):
-        self.interim = open("output/1-registrations-interim.ndjson", "w")
-        self.foreign = open("output/1-registrations-foreign.ndjson", "w")
-        self.too_old = open("output/1-registrations-before-%s.ndjson" % self.CUTOFF_YEAR, "w")
-        self.too_new = open("output/1-registrations-after-1964.ndjson", "w")
-        self.usable = open("output/1-registrations-in-range.ndjson", "w")
-        self.errors = open("output/1-registrations-error.ndjson", "w")
+        self.interim = open("output/2-registrations-interim.ndjson", "w")
+        self.foreign = open("output/2-registrations-foreign.ndjson", "w")
+        self.too_old = open("output/2-registrations-before-%s.ndjson" % self.CUTOFF_YEAR, "w")
+        self.too_new = open("output/2-registrations-after-1964.ndjson", "w")
+        self.usable = open("output/2-registrations-in-range.ndjson", "w")
+        self.errors = open("output/2-registrations-error.ndjson", "w")
         self.places = Counter()
 
         self.foreign_countries = set()
@@ -84,10 +84,8 @@ class Processor(object):
         if place in self.FOREIGN_CITIES:
             return True
         if place in self.foreign_countries:
-            print place
             return True
         if any(place.endswith(x) for x in self.foreign_country_endings):
-            print place
             return True
 
     def process_date_list(self, registration, dates):
@@ -207,6 +205,3 @@ class Processor(object):
 processor = Processor()
 for i in open("output/0-parsed-registrations.ndjson"):
     processor.process(i)
-
-for k, v in processor.places.most_common():
-    print v, k.encode("utf8")
