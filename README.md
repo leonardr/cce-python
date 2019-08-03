@@ -11,6 +11,9 @@ Archive](https://archive.org/details/copyrightrecords), [Stanford
 Libraries](https://exhibits.stanford.edu/copyrightrenewals), and
 [Project Gutenberg](https://www.gutenberg.org/ebooks/author/141).
 
+Thanks are due to [Sean Redmond](https://github.com/seanredmond),
+[Josh Hadro](https://github.com/hadro), and Greg Cram.
+
 # Statistics
 
 * There are about 760,000 works where a renewal record would be
