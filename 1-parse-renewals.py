@@ -19,7 +19,8 @@ class Parser(object):
                 continue
             for entry in self.process_file(os.path.join(path, i)):
                 yield entry
-        print self.count
+                self.count += 1
+        print(self.count)
 
     def process_file(self, path):
         for line in DictReader(open(path), dialect='excel-tab'):

@@ -2,7 +2,7 @@ import json
 
 class Output(object):
     def __init__(self, base):
-        self.path = "output/5-%s.ndjson" % base
+        self.path = "output/FINAL-%s.ndjson" % base
         self.out = open(self.path, "w")
         self.count = 0
 
@@ -41,4 +41,4 @@ for file in (
         dest.output(i)
 
 for output in yes, no, probably, probably_not:
-    print output.tally()
+    print(output.tally())

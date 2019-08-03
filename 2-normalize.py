@@ -37,7 +37,7 @@ class Processor(object):
         self.interim = open("output/2-registrations-interim.ndjson", "w")
         self.foreign = open("output/2-registrations-foreign.ndjson", "w")
         self.too_old = open("output/2-registrations-before-%s.ndjson" % self.CUTOFF_YEAR, "w")
-        self.too_new = open("output/2-registrations-after-1964.ndjson", "w")
+        self.too_new = open("output/2-registrations-after-1963.ndjson", "w")
         self.usable = open("output/2-registrations-in-range.ndjson", "w")
         self.errors = open("output/2-registrations-error.ndjson", "w")
         self.places = Counter()
@@ -67,13 +67,13 @@ class Processor(object):
                 try:
                     parsed = datetime.datetime.strptime(_date, format)
                     parsed_dates.append(parsed)
-                except Exception, e:
+                except:
                     continue
         if not parsed_dates:
             return None
         if len(parsed_dates) == 1 or len(set(parsed_dates)) == 1:
             return parsed_dates[0]
-        set_trace()
+        raise Exception("Multiple dates? in %r" % date)
 
     def place_is_foreign(self, place):
         """Make a best guess as to whether a place name is in
@@ -197,7 +197,7 @@ class Processor(object):
         parsed = datetime.datetime.strptime(reg_date, '%Y-%m-%d')
         if parsed.year < self.CUTOFF_YEAR:
             return self.too_old
-        if parsed.year > 1964:
+        if parsed.year > 1963:
             return self.too_new
 
         return self.usable

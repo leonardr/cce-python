@@ -2,7 +2,6 @@
 # JSON, with a minimum of processing.
 import json
 from pdb import set_trace
-from StringIO import StringIO
 import os
 from collections import defaultdict
 from lxml import etree
@@ -26,7 +25,7 @@ class Parser(object):
                     yield entry
                     self.count += 1
                     if not (self.count % 10000):
-                        print self.count
+                        print(self.count)
 
     def process_file(self, path):
         tree = etree.parse(open(path), self.parser)
@@ -125,7 +124,7 @@ class Parser(object):
 
         #for subtag in entry.xpath("*"):
         #    if subtag.tag not in self.seen:
-        #        print subtag.tag
+        #        print(subtag.tag)
         #        self.seen.add(subtag.tag)
         value = dict(uuid=uuid, regnum=regnum, regnums=regnums, reg_date=reg_date, title=title, authors=authors, publishers=publishers, extra=extra, note=note, children=children)
         return value

@@ -24,7 +24,7 @@ renewals_not_yet_matched = open(
 )
 matched = open("output/3-registrations-with-renewal.ndjson", "w")
 not_matched = open("output/3-registrations-with-no-renewal.ndjson", "w")
-not_yet_matched = open("output/3-registrations-not-yet-matched.ndjson", "w")
+not_yet_matched = open("output/3-registrations-to-check.ndjson", "w")
 
 for i in open("output/1-parsed-renewals.ndjson"):
     data = json.loads(i)

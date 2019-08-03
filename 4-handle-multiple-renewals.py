@@ -84,7 +84,7 @@ class Evaluator(object):
 probably_renewed = open("output/4-probably-renewed.ndjson", "w")
 probably_not_renewed = open("output/4-probably-not-renewed.ndjson", "w")
         
-for i in open("output/3-registrations-not-yet-matched.ndjson"):
+for i in open("output/3-registrations-to-check.ndjson"):
     data = json.loads(i)
     eval = Evaluator(data)
     data['evaluation'] = eval.evaluation
