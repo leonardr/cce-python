@@ -98,8 +98,8 @@ in checking for a renewal.
 
 Outputs:
 
-* `2-registrations-after-1964.ndjson`: Copyright registrations that
-  happened after 1964. These were renewed automatically, so there's no
+* `2-registrations-after-1963.ndjson`: Copyright registrations that
+  happened after 1963. These were renewed automatically, so there's no
   point in checking for an explicit renewal.
 
 * `2-registrations-before-{year}.ndjson` - Registrations that are moot
