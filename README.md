@@ -121,7 +121,8 @@ Outputs:
 * `2-registrations-foreign.ndjson` - Registrations for foreign works,
   or for works where the place of publication was obviously a place
   outside the United States. These works are generally subject to
-  different rules and there's no point checking for a renewal.
+  different rules and it's more complicated than just checking for a
+  renewal, so this script sets them aside.
 
 * `2-registrations-interim.ndjson` - Interim registrations, which are
   subject to different rules. There's no point checking for a renewal.
