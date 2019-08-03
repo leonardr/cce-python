@@ -46,9 +46,16 @@ for i in open("output/2-registrations-in-range.ndjson"):
             disposition = "Not renewed."       
     elif len(renewals) == 1:
         # One renewal -- this work was definitely renewed.
+        renewal = renewals[0]
         registration_output = matched
         renewal_output = renewals_matched
-        disposition = 'Renewed.'
+        if renewal['reg_date'] == data['reg_date']:
+            disposition = 'Renewed.'
+        else:
+            # There's a slight chance this means the work wasn't
+            # actually renewed, but more likely the dates are wrong in
+            # the dataset.
+            disposition = "Probably renewed, but registration dates don't match."
     else:
         # Too many renewals. Figure it out later.
         registration_output = not_yet_matched
