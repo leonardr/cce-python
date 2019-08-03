@@ -163,9 +163,9 @@ Outputs:
 
 This script handles the cases where multiple renewals were found for a
 single registration ID. Generally speaking, this isn't supposed to
-happen, but we can make a guess as to whether one of the renewals is
-the one we're looking for, or whether they're all false positives and
-the registration was not renewed at all.
+happen, but when it does happen, we can usually figure out which of
+the renewals is the 'real' one. Or, all the renewals may be false
+positives, in which case the registration was not renewed at all.
 
 Outputs:
 
