@@ -19,6 +19,7 @@ class Parser(object):
                 continue
             for entry in self.process_file(os.path.join(path, i)):
                 yield entry
+        print self.count
 
     def process_file(self, path):
         for line in DictReader(open(path), dialect='excel-tab'):
@@ -41,4 +42,4 @@ output = open("output/0-parsed-renewals.ndjson", "w")
 for parsed in Parser().process_directory_tree("renewals/data"):
         json.dump(parsed, output)
         output.write("\n")
-            
+
