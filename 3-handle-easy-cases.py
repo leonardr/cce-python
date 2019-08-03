@@ -2,7 +2,7 @@
 # not.
 #
 # One-to-one regnum match: work was clearly renewed.
-# No regnum match: work was clearly not renewed.
+# No regnum match, no children: work was clearly not renewed.
 # Multiple regnum matches: it's complicated, handle it later.
 #
 # Also eliminate from consideration renewals that do not correspond to
@@ -35,19 +35,37 @@ for i in open("output/2-registrations-in-range.ndjson"):
     num = data['regnum']
     seen_regnums.add(num)
     renewals = renewals_by_regnum[num]
+    children = data['children']
     if not renewals:
         # No renewal.
         registration_output = not_matched
         renewal_output = None
+        if children:
+            disposition = 'Not renewed, but has children.'
+        else:
+            disposition = "Not renewed."       
     elif len(renewals) == 1:
         # One renewal -- this work was definitely renewed.
         registration_output = matched
         renewal_output = renewals_matched
+        disposition = 'Renewed.'
     else:
-        # Too many renewals. Punt until later.
+        # Too many renewals. Figure it out later.
         registration_output = not_yet_matched
         renewal_output = renewals_not_yet_matched
+        disposition = None
 
+    if disposition:
+        data['disposition'] = disposition
+
+    # A child registration can mean any number of things, and we don't
+    # expect to have renewal information for all of a book's children.
+    # That said, we should attach any information we do have.
+    for child in children:
+        child['renewals'] = []
+        for child_regnum in child['regnums']:
+            child['renewals'].extend(renewals_by_regnum[child_regnum])
+        
     data['renewals'] = renewals
     json.dump(data, registration_output)
     registration_output.write("\n")

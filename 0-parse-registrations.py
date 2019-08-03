@@ -107,8 +107,6 @@ class Parser(object):
         ]
 
         extra = defaultdict(list)
-        if children:
-            extra['children'] = children
         for name in [
                 'edition', 'noticedate', 'series', 'newMatterClaimed',
                 'vol', 'desc', 'prev-regNum', 'prevPub', 'pubDate', 'volumes',
@@ -129,7 +127,7 @@ class Parser(object):
         #    if subtag.tag not in self.seen:
         #        print subtag.tag
         #        self.seen.add(subtag.tag)
-        value = dict(uuid=uuid, regnum=regnum, regnums=regnums, reg_date=reg_date, title=title, authors=authors, publishers=publishers, extra=extra, note=note)
+        value = dict(uuid=uuid, regnum=regnum, regnums=regnums, reg_date=reg_date, title=title, authors=authors, publishers=publishers, extra=extra, note=note, children=children)
         return value
 
 output = open("output/0-parsed-registrations.ndjson", "w")
