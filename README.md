@@ -17,13 +17,13 @@ Thanks are due to [Sean Redmond](https://github.com/seanredmond),
 
 # Statistics
 
-* There are about 760,000 works where a renewal record would be
+* There are about 850,000 works where a renewal record would be
   necessary for the work to still be in copyright today.
-* Of these, about 20% definitely have a renewal record and are still
+* Of these, about 19% definitely have a renewal record and are still
   in copyright.
 * About 7% _seem_ to have a renewal record, but a manual inspection is
   necessary to make sure.
-* About 72% definitely have no renewal record.
+* About 74% definitely have no renewal record.
 * About 0.2% don't _seem_ to have a renewal record, but a manual
   inspection is necessary to make sure.
 
@@ -131,9 +131,11 @@ Outputs:
   of a renewal record could make the difference between still being
   in-copyright and being in the public domain.
 
-* `2-registrations-error.ndjson` - Contains data on a very small
-  number of registrations which can't be processed because they're
-  missing essential information.
+* `2-registrations-error.ndjson` - Contains about 20,000
+  registrations which can't be processed because they're
+  missing essential information. This information might be missing
+  from the original registrations, but it's more likely missing from
+  the transcription.
 
 ## `3-handle-easy-cases.py`
 
@@ -159,10 +161,10 @@ Outputs:
 * `3-registrations-to-check.ndjson` - The difficult cases.
   These will be handled in the next script.
 
-* `3-renewals-not-yet-matched.ndjson` - A list of renewals where we
+* `3-renewals-with-no-registrations.ndjson` - A list of renewals where we
   found no corresponding registration. These are mostly periodicals
-  and such -- works other than "books proper" -- so their
-  registrations aren't in the dataset.
+  and such -- works other than "books proper" -- so although their
+  registrations exist, they aren't in this dataset.
 
 ## `4-handle-multiple-renewals.py`
 
@@ -175,10 +177,10 @@ positives, in which case the registration was not renewed at all.
 Outputs:
 
 * `4-probably-renewed.ndjson` - We're pretty sure we were able to find
-  a renewal for this work, so it's probably in copyright -- but it
+  a renewal for this work, so it's probably in copyright, but it
   needs to be checked manually.
 * `4-probably-not-renewed.ndjson` - None of the renewals look like a
-  match, so this work is probably out of copyright -- but it needs to
+  match, so this work is probably out of copyright, but it needs to
   be checked manually.
 
 ## `5-sort-it-out.py`
@@ -204,18 +206,12 @@ Each JSON object in the `FINAL-` files has a `disposition` key that
 explains this script's final conclusion about its renewal status. Here
 are the possible dispositions:
 
-* `Not renewed.` - No renewal record was found, and there are no
-   other known complicating factors. The copyright on this book has
+* `Not renewed.` - No renewal record was found, and we saw no
+   complicating factors. The copyright on this book has
    almost certainly lapsed.
 
 * `Renewed.` - One renewal record was found and it's an exact
    match. This book is almost certainly still in copyright.
-
-* `Not renewed, but has children.` - No renewal record was found, but
-  the original registration referred to _other_ registrations, which
-  complicates things. Depending on the relationship between this
-  registration and the others, parts of this book may still be in
-  copyright.
 
 * `Probably renewed, but registration dates don't match.` - There was
    a single renewal for the registration ID, but the dates didn't

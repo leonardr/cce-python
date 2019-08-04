@@ -40,10 +40,7 @@ for i in open("output/2-registrations-in-range.ndjson"):
         # No renewal.
         registration_output = not_matched
         renewal_output = None
-        if children:
-            disposition = 'Not renewed, but has children.'
-        else:
-            disposition = "Not renewed."       
+        disposition = "Not renewed."       
     elif len(renewals) == 1:
         # One renewal -- this work was definitely renewed.
         renewal = renewals[0]

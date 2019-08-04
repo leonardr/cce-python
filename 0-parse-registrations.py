@@ -30,7 +30,8 @@ class Parser(object):
     def process_file(self, path):
         tree = etree.parse(open(path), self.parser)
         for e in tree.xpath("//copyrightEntry"):
-            yield self.process_registration(e)
+            for registration in self.process_registration(e):
+                yield registration
 
     def xpath(self, tag, path):
         results = tag.xpath(path)
@@ -84,7 +85,7 @@ class Parser(object):
             base['nonclaimants'] = other
         yield base
 
-    def process_registration(self, entry):
+    def process_registration(self, entry, parent=None):
         regnums = entry.attrib.get('regnum', '').split()
         uuid = entry.attrib.get('id', None)
         authors = self.xpath(entry, "author/authorName")
@@ -99,11 +100,6 @@ class Parser(object):
         for publisher_tag in entry.xpath("publisher"):
             for publisher in self.process_publisher_tag(publisher_tag):
                 publishers.append(publisher)
-
-        children = [
-            self.process_registration(child)
-            for  child in entry.xpath("additionalEntry")
-        ]
 
         extra = defaultdict(list)
         for name in [
@@ -126,8 +122,26 @@ class Parser(object):
         #    if subtag.tag not in self.seen:
         #        print(subtag.tag)
         #        self.seen.add(subtag.tag)
-        value = dict(uuid=uuid, regnum=regnum, regnums=regnums, reg_date=reg_date, title=title, authors=authors, publishers=publishers, extra=extra, note=note, children=children)
-        return value
+        registration = dict(uuid=uuid, regnum=regnum, regnums=regnums, reg_date=reg_date, title=title, authors=authors, publishers=publishers, extra=extra, note=note)
+
+        if parent:
+            registration['parent'] = dict(
+                uuid=parent['uuid'],
+                regnum=parent['regnum'],
+                reg_date=parent['reg_date'],
+                authors=parent['authors'],
+                publishers=parent['publishers']
+            )
+        
+        children = []
+        for child_tag in entry.xpath("additionalEntry"):
+            for child_registration in self.process_registration(child_tag, registration):
+                children.append(child_registration)
+        registration['children'] = children
+
+        yield registration
+        for child in children:
+                yield child
 
 output = open("output/0-parsed-registrations.ndjson", "w")
 for parsed in Parser().process_directory_tree("registrations/xml"):
