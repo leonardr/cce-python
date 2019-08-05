@@ -58,10 +58,10 @@ python 5-sort-it-out.py
 The final script's output will look something like this:
 
 ```
-output/FINAL-renewed.ndjson: 151270 (19.93%)
-output/FINAL-not-renewed.ndjson: 549863 (72.44%)
-output/FINAL-probably-renewed.ndjson: 56553 (7.45%)
-output/FINAL-probably-not-renewed.ndjson: 1404 (0.18%)
+output/FINAL-renewed.ndjson: 159420 (18.83%)
+output/FINAL-not-renewed.ndjson: 623674 (73.68%)
+output/FINAL-probably-renewed.ndjson: 61747 (7.29%)
+output/FINAL-probably-not-renewed.ndjson: 1589 (0.19%)
 ```
 
 You'll see a number of large files in the `output` directory. These

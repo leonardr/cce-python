@@ -130,9 +130,10 @@ class Parser(object):
                 regnum=parent['regnum'],
                 reg_date=parent['reg_date'],
                 authors=parent['authors'],
-                publishers=parent['publishers']
+                publishers=parent['publishers'],
+                title=parent['title'],
             )
-        
+            
         children = []
         for child_tag in entry.xpath("additionalEntry"):
             for child_registration in self.process_registration(child_tag, registration):

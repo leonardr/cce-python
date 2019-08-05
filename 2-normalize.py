@@ -116,16 +116,7 @@ class Processor(object):
             formatted = None
         return earliest, formatted
 
-    def pre_process(self, registration):
-        # Consolidate multiple sets of publisher information
-        # into best guess at publication date and claimants.
-        if 'parent' in registration:
-            registration['parent'] = self.pre_process(registration['parent'])
-            parent_pub_date = registration['parent']['pub_date']
-            parent_reg_date = registration['parent']['reg_date']
-        else:
-            parent_pub_date = None
-            parent_reg_date = None
+    def _publisher_info(self, registration):
         pub_dates = []
         claimants = []
         places = []
@@ -141,10 +132,26 @@ class Processor(object):
             place = info.get('place')
             if place:
                 places.append(place)
-        if places:
-            registration['publication_place'] = places
-        if not pub_dates and parent_pub_date:
-            pub_dates = [parent_pub_date]
+        return pub_dates, claimants, places
+                
+    def pre_process(self, registration):
+        # Consolidate multiple sets of publisher information
+        # into best guess at publication date and claimants.
+        pub_dates, claimants, places = self._publisher_info(registration)
+        if 'parent' in registration:
+            registration['parent'] = self.pre_process(registration['parent'])
+            parent_reg_date = registration['parent']['reg_date']            
+            parent_pub_dates, parent_claimants, parent_places = self._publisher_info(
+                registration['parent']
+            )
+        else:
+            parent_reg_date = None
+            parent_pub_dates = []
+            parent_claimants = []
+            parent_places = []
+        if places or parent_places:
+            registration['publication_place'] = places + parent_places
+        pub_dates = pub_dates + parent_pub_dates
         reg_date = registration.get('reg_date') or parent_reg_date
         registration['claimants'] = claimants
         earliest_pub_date, pub_dates = self.process_date_list(
