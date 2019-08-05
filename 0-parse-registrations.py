@@ -144,6 +144,8 @@ class Parser(object):
         for child in children:
                 yield child
 
+if not os.path.exists("output"):
+    os.mkdir("output")
 output = open("output/0-parsed-registrations.ndjson", "w")
 for parsed in Parser().process_directory_tree("registrations/xml"):
         json.dump(parsed, output)
