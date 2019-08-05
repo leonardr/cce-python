@@ -120,12 +120,12 @@ Outputs:
 
 * `2-registrations-foreign.ndjson` - Registrations for foreign works,
   or for works where the place of publication was obviously a place
-  outside the United States. These works are generally subject to
-  different rules and it's more complicated than just checking for a
-  renewal, so this script sets them aside.
+  outside the United States. These works had their copyright renewed
+  by treaty, so the absence of a renewal doesn't prove anything.
 
-* `2-registrations-interim.ndjson` - Interim registrations, which are
-  subject to different rules. There's no point checking for a renewal.
+* `2-registrations-interim.ndjson` - Interim registrations for foreign
+  works. These are set aside for the same reason as other registrations
+  for foreign works.
 
 * `2-registrations-in-range.ndjson` - Registrations where the absence
   of a renewal record could make the difference between still being
