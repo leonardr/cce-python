@@ -103,7 +103,7 @@ class Processor(object):
             if parsed:
                 parsed_dates.append(parsed)
             else:
-                registration['warnings'].append(
+                registration.setdefault('warnings', []).append(
                     "Could not parse date %r" % date
                 )
 
@@ -116,9 +116,7 @@ class Processor(object):
             formatted = None
         return earliest, formatted
 
-    def pre_process(self, registration):
-        # Consolidate multiple sets of publisher information
-        # into best guess at publication date and claimants.
+    def _publisher_info(self, registration):
         pub_dates = []
         claimants = []
         places = []
@@ -134,11 +132,30 @@ class Processor(object):
             place = info.get('place')
             if place:
                 places.append(place)
-        if places:
-            registration['publication_place'] = places
+        return pub_dates, claimants, places
+                
+    def pre_process(self, registration):
+        # Consolidate multiple sets of publisher information
+        # into best guess at publication date and claimants.
+        pub_dates, claimants, places = self._publisher_info(registration)
+        if 'parent' in registration:
+            registration['parent'] = self.pre_process(registration['parent'])
+            parent_reg_date = registration['parent']['reg_date']            
+            parent_pub_dates, parent_claimants, parent_places = self._publisher_info(
+                registration['parent']
+            )
+        else:
+            parent_reg_date = None
+            parent_pub_dates = []
+            parent_claimants = []
+            parent_places = []
+        if places or parent_places:
+            registration['publication_place'] = places + parent_places
+        pub_dates = pub_dates + parent_pub_dates
+        reg_date = registration.get('reg_date') or parent_reg_date
         registration['claimants'] = claimants
         earliest_pub_date, pub_dates = self.process_date_list(
-            registration, pub_dates
+            registration, pub_dates,
         )
         earliest_reg_date, reg_dates = self.process_date_list(
             registration, registration.get('reg_date')
@@ -146,7 +163,7 @@ class Processor(object):
 
         registration['pub_date'] = earliest_pub_date
         if not earliest_reg_date and earliest_pub_date:
-            registration['warnings'].append("No registration date found; assumed earliest publication date.")
+            registration.setdefault('warnings',[]).append("No registration date found; assumed earliest publication date.")
             earliest_reg_date = earliest_pub_date
         registration['reg_date'] = earliest_reg_date
         if pub_dates:
@@ -156,6 +173,7 @@ class Processor(object):
 
         if places:
             registration['places'] = places
+        return registration
 
     def process(self, registration):
         registration = json.loads(i.strip())
