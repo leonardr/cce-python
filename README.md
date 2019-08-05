@@ -34,8 +34,8 @@ bring in the raw registration and renewal data; it'll take a long
 time.
 
 ```
-git submodule init registrations
-git submodule init renewals
+git submodule init
+git submodule update
 ```
 
 Make sure the lxml XML parser is installed:
