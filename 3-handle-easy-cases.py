@@ -33,6 +33,18 @@ for i in open("output/2-cross-references-in-foreign-registrations.ndjson"):
     data = json.loads(i)
     foreign_xrefs[data['regnum']].append(data)
 
+    # Create another cross-reference going in the other direction.
+    other_regnum = data['original_registration']['regnum']
+    reverse = dict(
+        note=data['note'],
+        reg_date=data['original_registration']['reg_date'],
+        title=data['original_registration']['title'],
+        original_registration=dict(
+            title=None, regnum=data['regnum']
+        )
+    )
+    foreign_xrefs[other_regnum].append(reverse)
+    
 for i in open("output/1-parsed-renewals.ndjson"):
     data = json.loads(i)
     renewals_by_regnum[data['regnum']].append(data)
@@ -82,7 +94,7 @@ for i in open("output/2-registrations-in-range.ndjson"):
         count_as_foreign = True
         note = xref['note']
         other_regnum = xref['original_registration']['regnum']
-        other_title = xref['original_registration']['title']
+        other_title = xref['original_registration'].get('title')
         warning = "Apparently referenced by a foreign registration (%s, %r), may be a foreign publication. Original note: %r." % (
             other_regnum, other_title, note
         )
@@ -93,12 +105,10 @@ for i in open("output/2-registrations-in-range.ndjson"):
                 "Registration date is a match (%s), this is very likely a foreign publication." % xref['reg_date']
             )
             
-        # Put this in potentially_foreign -- at the least it needs to
-        # be manually checked.
-        registration_output = potentially_foreign
         if data['disposition'] == 'Not renewed.':
             data['disposition'] = 'Not renewed but potentially foreign.'
-        
+            registration_output = potentially_foreign
+            
     data['renewals'] = renewals
     json.dump(data, registration_output)
     registration_output.write("\n")

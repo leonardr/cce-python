@@ -20,8 +20,8 @@ class Processor(object):
     FOREIGN_PREFIXES = set(["AF", "AFO", "AF0"])
     INTERIM_PREFIXES = set(["AI", "AIO", "AI0"])
 
-    DATE_AND_NUMBER_XREF = re.compile("([0-9]{,2}[A-Z][a-z]{2}[0-9]{2})[;,] ([A-Z]{1,2}[0-9-]+)")
-    POSSIBLE_NUMBER_XREF = re.compile("([A-Z]{1,2}[0-9-]{4,})")
+    DATE_AND_NUMBER_XREF = re.compile("([0-9]{,2}[A-Z][a-z]{2}[0-9]{2})[;,] (A[A-Z]?[0-9-]+)")
+    POSSIBLE_NUMBER_XREF = re.compile("(A{1,2}[0-9-]{4,})")
     
     # Big foreign publishing cities that are sometimes mentioned
     # without the context of the country.
