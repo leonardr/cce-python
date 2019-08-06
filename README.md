@@ -131,6 +131,10 @@ Outputs:
   of a renewal record could make the difference between still being
   in-copyright and being in the public domain.
 
+* `2-cross-references-in-foreign-registrations` - Contains a few
+  hundred strings that look like references in a foreign copyright
+  registration to another registration. This might indicate that 
+
 * `2-registrations-error.ndjson` - Contains about 20,000
   registrations which can't be processed because they're
   missing essential information. This information might be missing

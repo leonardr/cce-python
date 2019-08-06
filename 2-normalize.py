@@ -12,6 +12,7 @@
 from pdb import set_trace
 import json
 import datetime
+import re
 from collections import Counter
 
 class Processor(object):
@@ -19,6 +20,9 @@ class Processor(object):
     FOREIGN_PREFIXES = set(["AF", "AFO", "AF0"])
     INTERIM_PREFIXES = set(["AI", "AIO", "AI0"])
 
+    DATE_AND_NUMBER_XREF = re.compile("([0-9]{,2}[A-Z][a-z]{2}[0-9]{2})[;,] ([A-Z]{1,2}[0-9-]+)")
+    POSSIBLE_NUMBER_XREF = re.compile("([A-Z]{1,2}[0-9-]{4,})")
+    
     # Big foreign publishing cities that are sometimes mentioned
     # without the context of the country.
     FOREIGN_CITIES = set(
@@ -40,6 +44,13 @@ class Processor(object):
         self.too_new = open("output/2-registrations-after-1963.ndjson", "w")
         self.usable = open("output/2-registrations-in-range.ndjson", "w")
         self.errors = open("output/2-registrations-error.ndjson", "w")
+        self.cross_references_in_foreign_registrations = open(
+            "output/2-cross-references-in-foreign-registrations.ndjson", "w"
+        )
+        self.cross_references_from_renewals = json.load(open(
+            "output/1-renewal-cross-references.json"
+        ))
+        
         self.places = Counter()
 
         self.foreign_countries = set()
@@ -63,7 +74,7 @@ class Processor(object):
         for _date in dates:
             if isinstance(_date, dict):
                 _date = _date['date']
-            for format in ('%Y-%m-%d', '%Y-%m', '%Y', '%d%b%y'):
+            for format in ('%Y-%m-%d', '%Y-%m', '%Y', '%d%b%y', '%b%y'):
                 try:
                     parsed = datetime.datetime.strptime(_date, format)
                     parsed_dates.append(parsed)
@@ -173,13 +184,55 @@ class Processor(object):
 
         if places:
             registration['places'] = places
+        xrefs = list(self.xrefs(registration))
+        if xrefs:
+            registration['xrefs'] = xrefs
         return registration
 
+    def xrefs(self, registration):
+        """Find other registrations referred to in the notes of this registration."""
+        if not 'notes' in registration:
+            return
+        for note in registration['notes']:
+            xref = self._xref(note)
+            if xref:
+                yield xref
+
+    def _xref(self, note):
+        if not note:
+            return
+        regnum = date = None
+        m1 = self.DATE_AND_NUMBER_XREF.search(note)
+        if m1:
+            date, regnum = m1.groups()
+            date = self.parse_date(date)
+            if date:
+                if date.year > 2000:
+                    date = datetime.datetime(date.year - 100, date.month, date.day)
+                date = date.isoformat()[:10]
+        else:
+            m2 = self.POSSIBLE_NUMBER_XREF.search(note)
+            if m2:
+                [regnum] = m2.groups()
+        if not regnum:
+            return None
+        regnum = regnum.replace("-", "")
+        return dict(regnum=regnum, reg_date=date, note=note)
+    
     def process(self, registration):
         registration = json.loads(i.strip())
         registration['warnings'] = []
         self.pre_process(registration)
         output = self.disposition(registration)
+        if output == self.foreign:
+            # Write all references from this registration to the list of
+            # foreign cross-references. This may provide evidence that some other
+            # registration is for a book with an original foreign publication.
+            for xref in registration.get('xrefs', []):
+                xref = dict(xref)
+                xref['original_registration'] = registration
+                json.dump(xref, self.cross_references_in_foreign_registrations)
+                self.cross_references_in_foreign_registrations.write("\n")
         if not registration['warnings']:
             del registration['warnings']
         json.dump(registration, output)
@@ -201,7 +254,25 @@ class Processor(object):
         places = registration.get('places', [])
         for place in places:
             if self.place_is_foreign(place):
+                for cross_reference in self.cross_references_from_renewals.get(
+                        regnum, []
+                ):
+                    # All regnums mentioned in renewals for this regnum are suspect.
+                    # All publications with those regnums need to be checked to make
+                    # sure they're not foreign.
+                    xref = dict(
+                        regnum=cross_reference,
+                        note="Mentioned in a renewal record for %s, which turned out to be a foreign publication." % regnum
+                    )
+                    json.dump(xref, self.cross_references_in_foreign_registrations)
+                    self.cross_references_in_foreign_registrations.write("\n")
+
                 return self.foreign
+            else:
+                for cross_reference in self.cross_references_from_renewals.get(
+                        regnum, []
+                ):
+                    print("%s was mentioned in a renewal record for %s, but it's cool, because %s wasn't a foreign publication." % (cross_reference, regnum))
 
         for place in places:
             self.places[place] += 1
