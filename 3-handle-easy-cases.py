@@ -12,21 +12,20 @@
 from pdb import set_trace
 from collections import defaultdict
 import json
-from model import Registration, Renewal
+from compare import Comparator
 
-seen_regnums = set()
+comparator = Comparator(
+    "output/1-parsed-renewals.ndjson"
+    "output/2-cross-references-in-foreign-registrations.ndjson",
+)
+for i in open("output/2-registrations-in-range.ndjson"):
+    reg = Registration(**json.loads(i))
+    
 
 renewals_matched = open("output/3-renewals-with-registrations.ndjson", "w")
-renewals_not_matched = open(
-    "output/3-renewals-with-no-registrations.ndjson", "w"
-)
-renewals_not_yet_matched = open(
-    "output/3-renewals-not-yet-matched.ndjson", "w"
-)
-matched = open("output/3-registrations-with-renewal.ndjson", "w")
-not_matched = open("output/3-registrations-with-no-renewal.ndjson", "w")
-not_yet_matched = open("output/3-registrations-with-multiple-potential-renewals.ndjson", "w")
-
+renewals_not_matched = open("output/3-renewals-with-no-registrations.ndjson", "w")
+registrations_matched = open("output/3-registrations-with-renewal.ndjson", "w")
+registrations_not_matched = open("output/3-registrations-with-no-renewal.ndjson", "w")
 potentially_foreign = open("output/3-potentially-foreign-registrations.ndjson", "w")
 
 foreign_xrefs = defaultdict(list)
