@@ -35,8 +35,18 @@ class Parser(object):
         renewal_id = entry['id']
         renewal_date = entry.get('dreg', None)
         new_matter = entry['new_matter']
+        see_also_renewal = entry['see_also_ren'].split("|")
+        see_also_registration = entry['see_also_reg'].split("|")
         data = dict(uuid=uuid, regnum=regnum, reg_date=reg_date, renewal_id=renewal_id,
-                    renewal_date=renewal_date, author=author, title=title, new_matter=new_matter)
+                    renewal_date=renewal_date, author=author, title=title, new_matter=new_matter,
+                    see_also_renewal=see_also_renewal,
+                    see_also_registration=see_also_registration,
+        )
+        if see_also_registration:
+            print see_also_registration
+        if see_also_renewal:
+            print see_also_renewal
+
         return data
 
 output = open("output/1-parsed-renewals.ndjson", "w")
