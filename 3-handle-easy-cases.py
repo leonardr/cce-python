@@ -1,9 +1,10 @@
-# Handle works that were clearly renewed and works that clearly were
-# not.
+# Handle works that were clearly renewed, works that clearly were
+# not, and works that were referenced by a foreign registration.
 #
 # One-to-one regnum match: work was clearly renewed.
 # No regnum match, no children: work was clearly not renewed.
 # Multiple regnum matches: it's complicated, handle it later.
+# Mentioned in foreign registration: assume this work, too is a foreign publication.
 #
 # Also eliminate from consideration renewals that do not correspond to
 # any registration in the dataset. (They're probably renewals for
@@ -11,8 +12,8 @@
 from pdb import set_trace
 from collections import defaultdict
 import json
+from model import Registration, Renewal
 
-renewals_by_regnum = defaultdict(list)
 seen_regnums = set()
 
 renewals_matched = open("output/3-renewals-with-registrations.ndjson", "w")
@@ -24,37 +25,23 @@ renewals_not_yet_matched = open(
 )
 matched = open("output/3-registrations-with-renewal.ndjson", "w")
 not_matched = open("output/3-registrations-with-no-renewal.ndjson", "w")
-not_yet_matched = open("output/3-registrations-to-check.ndjson", "w")
+not_yet_matched = open("output/3-registrations-with-multiple-potential-renewals.ndjson", "w")
 
 potentially_foreign = open("output/3-potentially-foreign-registrations.ndjson", "w")
 
 foreign_xrefs = defaultdict(list)
 for i in open("output/2-cross-references-in-foreign-registrations.ndjson"):
-    data = json.loads(i)
-    foreign_xrefs[data['regnum']].append(data)
+    reg = Registration(**json.loads(i))
+    for regnum in reg.regnums:
+        foreign_xrefs[regnum].append(reg)
 
-    # Create another cross-reference going in the other direction.
-    if not 'original_registration' in data:
-        continue
-    other_regnum = data['original_registration']['regnum']
-    reverse = dict(
-        note=data['note'],
-        reg_date=data['original_registration']['reg_date'],
-        title=data['original_registration']['title'],
-        original_registration=dict(
-            title=None, regnum=data['regnum']
-        )
-    )
-    foreign_xrefs[other_regnum].append(reverse)
-    
+renewals_by_regnum = defaultdict(list)    
 for i in open("output/1-parsed-renewals.ndjson"):
-    data = json.loads(i)
-    renewals_by_regnum[data['regnum']].append(data)
+    renewal = Renewal(**json.loads(i))
+    renewals_by_regnum[renewal.regnum].append(renewal)
 
 for i in open("output/2-registrations-in-range.ndjson"):
-    data = json.loads(i)
-    num = data['regnum']
-    seen_regnums.add(num)
+    reg = Registration(**json.loads(i))
     renewals = renewals_by_regnum[num]
     children = data['children']
     if not renewals:
