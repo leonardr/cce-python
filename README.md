@@ -58,10 +58,10 @@ python 5-sort-it-out.py
 The final script's output will look something like this:
 
 ```
-output/FINAL-renewed.ndjson: 159420 (18.83%)
-output/FINAL-not-renewed.ndjson: 623674 (73.68%)
-output/FINAL-probably-renewed.ndjson: 61747 (7.29%)
-output/FINAL-probably-not-renewed.ndjson: 1589 (0.19%)
+output/FINAL-renewed.ndjson: 158019 (18.73%)
+output/FINAL-not-renewed.ndjson: 622455 (73.79%)
+output/FINAL-probably-renewed.ndjson: 61494 (7.29%)
+output/FINAL-probably-not-renewed.ndjson: 1578 (0.19%)
 ```
 
 You'll see a number of large files in the `output` directory. These
@@ -130,6 +130,10 @@ Outputs:
 * `2-registrations-in-range.ndjson` - Registrations where the absence
   of a renewal record could make the difference between still being
   in-copyright and being in the public domain.
+
+* `2-cross-references-in-foreign-registrations` - Contains a few
+  hundred strings that look like references in a foreign copyright
+  registration to another registration. This might indicate that 
 
 * `2-registrations-error.ndjson` - Contains about 20,000
   registrations which can't be processed because they're

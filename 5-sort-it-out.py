@@ -19,6 +19,7 @@ probably = Output("probably-renewed")
 probably_not = Output("probably-not-renewed")
 yes = Output("renewed")
 no = Output("not-renewed")
+potentially_foreign = Output("potentially-foreign")
 
 def destination(disposition):
     if disposition.startswith("Probably renewed"):
@@ -27,12 +28,15 @@ def destination(disposition):
         return probably_not
     if disposition.startswith("Renewed"):
         return yes
+    if disposition.startswith("Potentially foreign"):
+        return potentially_foreign
     if disposition.startswith("Not renewed"):
         return no
 
 for file in (
         "3-registrations-with-renewal",
         "3-registrations-with-no-renewal",
+        "3-potentially-foreign-registrations",
         "4-probably-renewed",
         "4-probably-not-renewed",
 ):
@@ -42,7 +46,7 @@ for file in (
         dest = destination(data['disposition'])
         dest.output(i)
 
-outputs = [yes, no, probably, probably_not]
+outputs = [yes, no, probably, probably_not, potentially_foreign]
 total = sum(x.count for x in outputs)
         
 for output in outputs:
