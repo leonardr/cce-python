@@ -28,7 +28,7 @@ def destination(disposition):
         return probably_not
     if disposition.startswith("Renewed"):
         return yes
-    if disposition.startswith("Not renewed but potentially foreign"):
+    if disposition.startswith("Potentially foreign"):
         return potentially_foreign
     if disposition.startswith("Not renewed"):
         return no

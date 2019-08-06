@@ -120,6 +120,9 @@ class Parser(object):
             if tags:
                 extra[name].extend(tags)
 
+        if extra['prevPub'] or extra['prev-regNum']:
+            print extra['prevPub'], extra['prev-regNum']
+                
         #for subtag in entry.xpath("*"):
         #    if subtag.tag not in self.seen:
         #        print(subtag.tag)

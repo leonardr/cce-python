@@ -22,6 +22,8 @@ class Processor(object):
 
     DATE_AND_NUMBER_XREF = re.compile("([0-9]{,2}[A-Z][a-z]{2}[0-9]{2})[;,] (A[A-Z]?[0-9-]+)")
     POSSIBLE_NUMBER_XREF = re.compile("(A{1,2}[0-9-]{4,})")
+
+    PREVIOUSLY_PUBLISHED_ABROAD = re.compile("[pd]u[bt][.,]? abroad", re.I)
     
     # Big foreign publishing cities that are sometimes mentioned
     # without the context of the country.
@@ -242,41 +244,101 @@ class Processor(object):
         registration['error'] = error
         return self.errors
 
+    def has_foreign_place(self, registration):
+        places = registration.get('places', [])
+
+        for place in places:
+            self.places[place] += 1
+        
+        for place in places:
+            if self.place_is_foreign(place):
+                return self.foreign
+
+    def has_foreign_previous_publication(self, registration):
+        extra = registration.get('extra', [])
+        previous_publications = extra.get('prevPub', '')
+        previous_registrations = extra.get('prev-regNum', '')
+
+        warnings = registration.setdefault('warnings', [])
+        # First, see if there's a previous registration number that's
+        # a foreign or interim registration.
+        for prev_regnum in previous_registrations:
+            foreign_type = self.regnum_foreign_type(prev_regnum)
+            if foreign_type:
+                warnings.append("Previous registration was foreign or interim registration. Treating as foreign.")
+                return foreign_type
+
+        # Next, see if the 'previous publication' information says that
+        # the work was previously published abroad, without giving
+        # a specific registration number.
+        for previous_publication in previous_publications:
+            if self.PREVIOUSLY_PUBLISHED_ABROAD.search(previous_publication):
+                warnings.append("Previous publication indicates previously published abroad.")
+                return self.foreign
+            if 'AI.' in previous_publication or 'AI-' in previous_publication:
+                warnings.append("Previous publication seems to mention interim registration.")
+                return self.interim
+                
+            if 'abroad' in previous_publication.lower():
+                registration.setdefault('warnings', []).append(
+                    "Previous publication mentioned the word 'abroad' but may not have actually been published abroad."
+                )
+                return self.foreign
+            
+    def regnum_foreign_type(self, regnum):
+        if any(regnum.startswith(x) for x in self.FOREIGN_PREFIXES):
+            return self.foreign
+        if any(regnum.startswith(x) for x in self.INTERIM_PREFIXES):
+            return self.interim
+        return None
+
+    def check_for_foreign_publication(self, registration):
+        # Try a variety of ways of finding a foreign publication.
+        regnums = registration.get('regnums', [])
+        for regnum in regnums:
+            # Its regnum might be a foreign or interim registration.
+            foreign_disposition = self.regnum_foreign_type(regnum)
+            if foreign_disposition:
+                return foreign_disposition
+
+        # If might mention a previous registration that's a foreign or
+        # interim registration.
+        foreign_disposition = self.has_foreign_previous_publication(
+            registration
+        )
+        if foreign_disposition:
+            return foreign_disposition
+
+        # It might have been published in a foreign place.
+        if self.has_foreign_place(registration):
+            return self.foreign
+
+    def mark_regnum_as_foreign(self, regnum):
+        for cross_reference in self.cross_references_from_renewals.get(
+                regnum, []
+        ):
+            # All regnums mentioned in renewals for this
+            # regnum are suspect.  All publications with those
+            # regnums need to be checked to make sure they're
+            # not foreign.
+            xref = dict(
+                regnum=cross_reference,
+                note="Mentioned in a renewal record for %s, which turned out to be a foreign publication." % regnum
+            )
+            json.dump(xref, self.cross_references_in_foreign_registrations)
+            self.cross_references_in_foreign_registrations.write("\n")
+        
     def disposition(self, registration):
         regnums = registration.get('regnums')
         if not regnums:
             return self.error(registration, "No registration number")
-        for regnum in regnums:
-            if any(regnum.startswith(x) for x in self.FOREIGN_PREFIXES):
-                return self.foreign
-            if any(regnum.startswith(x) for x in self.INTERIM_PREFIXES):
-                return self.interim
-        places = registration.get('places', [])
-        for place in places:
-            if self.place_is_foreign(place):
-                for cross_reference in self.cross_references_from_renewals.get(
-                        regnum, []
-                ):
-                    # All regnums mentioned in renewals for this regnum are suspect.
-                    # All publications with those regnums need to be checked to make
-                    # sure they're not foreign.
-                    xref = dict(
-                        regnum=cross_reference,
-                        note="Mentioned in a renewal record for %s, which turned out to be a foreign publication." % regnum
-                    )
-                    json.dump(xref, self.cross_references_in_foreign_registrations)
-                    self.cross_references_in_foreign_registrations.write("\n")
 
-                return self.foreign
-            else:
-                for cross_reference in self.cross_references_from_renewals.get(
-                        regnum, []
-                ):
-                    print("%s was mentioned in a renewal record for %s, but it's cool, because %s wasn't a foreign publication." % (cross_reference, regnum))
-
-        for place in places:
-            self.places[place] += 1
-
+        foreign_disposition = self.check_for_foreign_publication(registration)
+        if foreign_disposition:
+            for regnum in regnums:
+                self.mark_regnum_as_foreign(regnum)            
+            return foreign_disposition       
+        
         reg_date = registration['reg_date']
         if not reg_date:
             return self.error(
