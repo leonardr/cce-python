@@ -199,10 +199,10 @@ class Registration(XMLParser):
             publishers=None, previous_regnums=None, previous_publications=None,
             extra=None, parent=None, children=None,
             xrefs=None, _is_foreign=None, warnings=None,
-            error=None
+            error=None, disposition=None, renewals=None
     ):
         self.uuid = uuid
-        self.regnums = regnums or []
+        self.regnums = [x for x in regnums if x] or []
         self.reg_dates = reg_dates or []
         self.title = title
         self.authors = authors or []
@@ -216,12 +216,15 @@ class Registration(XMLParser):
         self.xrefs = xrefs or []
         self.warnings = warnings or []
         self.error = error
-
+        self.disposition = disposition
+        self.renewals = renewals
+        
     def jsonable(self, include_others=True):
         data = dict(
             uuid=self.uuid,
             regnums=self.regnums,
             reg_dates=self.reg_dates,
+            title=self.title,
             authors=self.authors,
             notes=self.notes,
             publishers=[self._json(p) for p in self.publishers],
@@ -230,9 +233,12 @@ class Registration(XMLParser):
             extra=self.extra,
             warnings=self.warnings,
             error=self.error,
+            disposition=self.disposition,
         )
+        if self.renewals:
+            data['renewals'] = [self._json(x) for x in self.renewals]
         if include_others and self.parent:
-            parent = self.parent.jsonable(include_others=False)
+            parent = self._json(self.parent, include_others=False)
         else:
             parent = None
         data['parent'] = parent
@@ -255,7 +261,7 @@ class Registration(XMLParser):
     def _json(self, x, **kwargs):
         if isinstance(x, dict):
             return x
-        return x.jsonify(**kwargs)
+        return x.jsonable(**kwargs)
 
     @classmethod
     def from_json(cls, data):
@@ -485,6 +491,42 @@ class Registration(XMLParser):
         if pub:
             return min(pub)
 
+    NOT_ALPHA = re.compile("[^0-9A-Z ]", re.I)
+    def _normalize_text(self, v):
+        if not v:
+            return ""
+        return self.NOT_ALPHA.sub("", v).lower()
+
+    def words_match(self, t1, t2, quotient=0.75):
+        if not t1 or not t2:
+            return False
+
+        norm1 = self._normalize_text(t1)
+        norm2 = self._normalize_text(t2)
+        if norm1 == norm2:
+            return True
+        w1 = norm1.split()
+        w2 = norm2.split()
+        intersection = set(w1).intersection(w2)
+        bigger = max(len(w1), len(w2))
+        if len(intersection) > (bigger * quotient):
+            return True
+        return False
+        
+    def author_match(self, other_author):
+        if not other_author:
+            return False
+        for a in self.authors:
+            if self.words_match(a, other_author):
+                print "author match", a, other_author
+                return True
+        return False
+            
+    def title_match(self, other_title):
+        if self.words_match(self.title, other_title):
+            return True
+        return False
+        
 class Renewal(object):
 
     def __init__(self, **data):
