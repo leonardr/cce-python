@@ -18,9 +18,8 @@ class Comparator(object):
             renewal = Renewal(**json.loads(i))
             self.renewals[renewal.regnum].append(renewal)
 
-
-        self.matched_renewals = []
-
+        self.used_renewals = set()
+       
     def is_foreign(self, registration):
         for regnum in registration.regnums:
             if regnum in self.foreign_registrations:
@@ -49,6 +48,10 @@ class Comparator(object):
         else:
             registration.disposition = "Not renewed."
             renewals = []
+        for renewal in renewals:
+            # These renewals have been matched; they should not be
+            # output in the list of unmatched renewals.
+            self.used_renewals.add(renewal.regnum)
         return renewals
 
     def best_renewal(self, registration, renewals):
@@ -59,12 +62,6 @@ class Comparator(object):
                 # A very strong match.
                 return [renewal], "Renewed. (Date match.)"
 
-        if len(renewals) == 1:
-            # There's only one renewal, so it's a very likely match
-            # even if the dates are misaligned.
-            return (renewals,
-                    "Probably renewed, but registration dates don't match.")
-
         # At this point we have multiple renewals and no date matches.
         # Try an author match.
         for renewal in renewals:
@@ -74,4 +71,4 @@ class Comparator(object):
             if registration.title_match(renewal.title):
                 return [renewal], "Probably renewed. (Title match.)"
 
-        return renewals, "Probably renewed, but none of these renewals seem like a good match."
+        return renewals, "Possibly renewed, but none of these renewals seem like a good match."

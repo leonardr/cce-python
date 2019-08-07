@@ -518,7 +518,6 @@ class Registration(XMLParser):
             return False
         for a in self.authors:
             if self.words_match(a, other_author):
-                print "author match", a, other_author
                 return True
         return False
             

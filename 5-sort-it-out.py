@@ -11,43 +11,53 @@ class Output(object):
         self.count += 1
 
     def tally(self, total):
+        if not total:
+            return "%s: %s" % (self.path, self.count)
         return "%s: %s (%.2f%%)" % (
             self.path, self.count, self.count / float(total) * 100
         )
-        
-probably = Output("probably-renewed")
-probably_not = Output("probably-not-renewed")
-yes = Output("renewed")
-no = Output("not-renewed")
-potentially_foreign = Output("potentially-foreign")
 
-def destination(disposition):
+yes = Output("renewed")
+probably = Output("probably-renewed")
+possibly = Output("possibly-renewed")
+no = Output("not-renewed")
+foreign = Output("foreign")
+
+def destination(file, disposition):
+    if 'foreign' in file:
+        return foreign
     if disposition.startswith("Probably renewed"):
         return probably
     if disposition.startswith("Probably not renewed"):
         return probably_not
+    if disposition.startswith("Possibly renewed"):
+        return possibly
     if disposition.startswith("Renewed"):
         return yes
     if disposition.startswith("Potentially foreign"):
         return potentially_foreign
     if disposition.startswith("Not renewed"):
         return no
-
+    else:
+        print disposition
+        return no
+    
 for file in (
+        "2-registrations-foreign",
+        "3-potentially-foreign-registrations",
         "3-registrations-with-renewal",
         "3-registrations-with-no-renewal",
-        "3-potentially-foreign-registrations",
-        "4-probably-renewed",
-        "4-probably-not-renewed",
 ):
     path = "output/%s.ndjson"
     for i in open(path % file):
         data = json.loads(i)
-        dest = destination(data['disposition'])
+        dest = destination(file, data['disposition'])
         dest.output(i)
 
-outputs = [yes, no, probably, probably_not, potentially_foreign]
+outputs = [yes, probably, possibly, no]
 total = sum(x.count for x in outputs)
         
+print(foreign.tally(total+foreign.count))
+print("")
 for output in outputs:
     print(output.tally(total))
