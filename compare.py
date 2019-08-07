@@ -26,7 +26,7 @@ class Comparator(object):
                 registration.warnings.append(
                     "This registration was mentioned in a registration for a likely foreign publication. It's possible that this registration is also a foreign publication."
                 )
-                registration.extra['foreign_registration'] = self.foreign_registrations[regnum][0].jsonable()
+                registration.extra['foreign_registration'] = self.foreign_registrations[regnum][0].jsonable(compact=True)
                 registration.disposition = "Possible foreign publication - check manually."
                 return True
         return False

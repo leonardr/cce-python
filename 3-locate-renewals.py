@@ -47,10 +47,14 @@ for i in open("output/2-registrations-in-range.ndjson"):
         print("%d %.2fsec" % (count, after-before))
         before = after
         after = None
-    
-# Now that we're done, we can write a list of all the renewals that
-# had no associated registration.
-for regnum, renewals in renewals_by_regnum.items():
-    if regnum not in seen_regnums:
-        json.dump({regnum:renewals}, renewals_not_matched)
-        renewals_not_matched.write("\n")
+
+# Now that we're done, we can divide up the renewals by whether or not
+# we found a registration for them.
+for regnum, renewals in comparator.renewals.items():
+    if regnum in comparator.used_renewals:
+        out = renewals_not_matched
+    else:
+        out = renewals_matched
+    for r in renewals:
+        json.dump(r.jsonable(), out)
+        out.write("\n")
