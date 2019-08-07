@@ -17,15 +17,13 @@ Thanks are due to [Sean Redmond](https://github.com/seanredmond),
 
 # Statistics
 
-* There are about 850,000 works where a renewal record would be
+* There are about 840,000 works where a renewal record would be
   necessary for the work to still be in copyright today.
 * Of these, about 19% definitely have a renewal record and are still
   in copyright.
-* About 7% _seem_ to have a renewal record, but a manual inspection is
+* About 8% _seem_ to have a renewal record, but a manual inspection is
   necessary to make sure.
-* About 74% definitely have no renewal record.
-* About 0.2% don't _seem_ to have a renewal record, but a manual
-  inspection is necessary to make sure.
+* About 73% definitely have no renewal record.
 
 # Generating the Data
 
