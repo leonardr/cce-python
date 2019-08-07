@@ -1,5 +1,6 @@
 from model import Registration
 import json
+from pdb import set_trace
 
 class Output(object):
     def __init__(self, base):
@@ -12,12 +13,11 @@ class Output(object):
         self.out.write("\n")
         self.count += 1
 
-    def tally(self, total, of_what):
+    def tally(self, total):
         if not total:
             return "%s: %s" % (self.path, self.count)
-        return "%s: %s (%.2f%% of %s)" % (
+        return "%s: %s (%.2f%%)" % (
             self.path, self.count, self.count / float(total) * 100,
-            of_what
         )
 
 yes = Output("renewed")
@@ -25,10 +25,21 @@ probably = Output("probably-renewed")
 possibly = Output("possibly-renewed")
 no = Output("not-renewed")
 foreign = Output("foreign")
+potentially_foreign = Output("potentially-foreign")
+error = Output("error")
+out_of_range = Output("out-of-range")
 
 def destination(file, disposition):
+    if disposition.startswith("Potentially foreign"):
+        return potentially_foreign, False
     if 'foreign' in file:
         return foreign
+    if 'registrations-too-late' in file:
+        return too_late
+    if 'registrations-too-early' in file:
+        return too_early
+    if 'error' in file:
+        return error
     if disposition.startswith("Probably renewed"):
         return probably
     if disposition.startswith("Probably not renewed"):
@@ -37,19 +48,31 @@ def destination(file, disposition):
         return possibly
     if disposition.startswith("Renewed"):
         return yes
-    if disposition.startswith("Potentially foreign"):
-        return potentially_foreign
     if disposition.startswith("Not renewed"):
         return no
     else:
         print disposition
         return no
-    
+
+in_range_outputs = [yes, probably, possibly, no]
+all_outputs = [
+    foreign,
+    potentially_foreign,
+    too_late,
+    too_early,
+    yes,
+    probably,
+    possibly,
+    no,
+    error,
+]
+
 for file in (
-        "2-registrations-foreign",
-        "3-potentially-foreign-registrations",
-        "3-registrations-with-renewal",
-        "3-registrations-with-no-renewal",
+        "3-registrations-in-range",
+        "3-registrations-foreign",
+        "3-registrations-too-late",
+        "3-registrations-too-early",
+        "3-registrations-error",
 ):
     path = "output/%s.ndjson"
     for i in open(path % file):
@@ -57,10 +80,13 @@ for file in (
         dest = destination(file, data.disposition)
         dest.output(data)
 
-outputs = [yes, probably, possibly, no]
-total = sum(x.count for x in outputs)
-        
-print(foreign.tally(total+foreign.count, "total"))
+in_range_total = sum(x.count for x in in_range_outputs)
+grand_total = sum(x.count for x in all_outputs)
+
+print("Among all publications:")
+for output in all_outputs:
+    print(output.tally(grand_total))
 print("")
-for output in outputs:
-    print(output.tally(total, "US publications"))
+print("Among US publications in renewal range:")
+for output in in_range_outputs:
+    print(output.tally(in_range_total))

@@ -4,15 +4,7 @@ from model import Registration, Renewal
 import json
 
 class Comparator(object):
-    def __init__(
-        self, renewals_input_path, foreign_registrations_input_path
-    ):
-        self.foreign_registrations = defaultdict(list)
-        for i in open(foreign_registrations_input_path):
-            registration = Registration(**json.loads(i))
-            for regnum in registration.regnums:
-                self.foreign_registrations[regnum].append(registration)
-
+    def __init__(self, renewals_input_path):
         self.renewals = defaultdict(list)
         for i in open(renewals_input_path):
             renewal = Renewal(**json.loads(i))
@@ -20,17 +12,6 @@ class Comparator(object):
 
         self.used_renewals = set()
        
-    def is_foreign(self, registration):
-        for regnum in registration.regnums:
-            if regnum in self.foreign_registrations:
-                registration.warnings.append(
-                    "This registration was mentioned in a registration for a likely foreign publication. It's possible that this registration is also a foreign publication."
-                )
-                registration.extra['foreign_registration'] = self.foreign_registrations[regnum][0].jsonable(compact=True)
-                registration.disposition = "Possible foreign publication - check manually."
-                return True
-        return False
-
     def renewal_for(self, registration):
         """Find a renewal for this registration.
         
@@ -67,6 +48,8 @@ class Comparator(object):
         for renewal in renewals:
             if registration.author_match(renewal.author):
                 return [renewal], "Probably renewed. (Author match.)"
+
+        # That didn't work. Try a title match.
         for renewal in renewals:
             if registration.title_match(renewal.title):
                 return [renewal], "Probably renewed. (Title match.)"
