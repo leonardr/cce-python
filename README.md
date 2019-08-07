@@ -58,12 +58,12 @@ python 5-sort-it-out.py
 The final script's output will look something like this:
 
 ```
-output/FINAL-foreign.ndjson: 192473 (18.71% of total)
+output/FINAL-foreign.ndjson: 193364 (18.78% of total)
 
-output/FINAL-renewed.ndjson: 158555 (18.96% of US publications)
+output/FINAL-renewed.ndjson: 158539 (18.96% of US publications)
 output/FINAL-probably-renewed.ndjson: 1112 (0.13% of US publications)
-output/FINAL-possibly-renewed.ndjson: 62437 (7.47% of US publications)
-output/FINAL-not-renewed.ndjson: 614283 (73.44% of US publications)
+output/FINAL-possibly-renewed.ndjson: 62430 (7.47% of US publications)
+output/FINAL-not-renewed.ndjson: 614095 (73.44% of US publications)
 ```
 
 You'll see a number of large files in the `output` directory. These
