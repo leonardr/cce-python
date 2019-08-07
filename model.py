@@ -401,17 +401,17 @@ class Registration(XMLParser):
                     "Publication place '%s' looks foreign." % place
                 )
                 return True
-       
-            
-        # TODO: check edition for keywords like '1st American ed.'
-
+           
         # Maybe a previous publication mentions certain keywords. These
         # are not terribly reliable, so we run this test last.
         for previous_publication in self.previous_publications:
-            for keyword in ['abroad']:
-                if keyword in previous_publication.lower():
+            p = previous_publication.lower()
+            for keyword in [
+                'abroad', 'american ed.', 'american edition'
+            ]:
+                if keyword in p:
                     self.warnings.append(
-                        "Previous publication %r mentions the keyword '%s', which indicates this _may_ be a foreign publication." % (
+                        "Previous publication %r mentions the keyword '%s', which indicates this _may_ have originally been a foreign publication." % (
                             keyword, previous_publication
                         )
                     )
