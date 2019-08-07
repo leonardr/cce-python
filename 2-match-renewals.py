@@ -65,15 +65,13 @@ for i in open("output/0-parsed-registrations.ndjson"):
 # Now that we're done, we can divide up the renewals by whether or not
 # we found a registration for them.
 
-# TODO: This is still misclassifying registrations that were matched,
-# e.g. "A417695"
 renewals_matched = open("output/2-renewals-with-registrations.ndjson", "w")
 renewals_not_matched = open("output/2-renewals-with-no-registrations.ndjson", "w")
 for regnum, renewals in comparator.renewals.items():
     for renewal in renewals:
         if renewal in comparator.used_renewals:
-            out = renewals_not_matched
-        else:
             out = renewals_matched
+        else:
+            out = renewals_not_matched
         json.dump(renewal.jsonable(), out)
         out.write("\n")

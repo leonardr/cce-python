@@ -47,20 +47,31 @@ Then run the scripts, one after another:
 ```
 python 0-parse-registrations.py
 python 1-parse-renewals.py
-python 2-filter.py
-python 3-locate-renewals.py
+python 2-match-renewals.py
+python 3-filter.py
 python 4-sort-it-out.py
 ```
 
 The final script's output will look something like this:
 
 ```
-output/FINAL-foreign.ndjson: 193364 (18.78% of total)
+Among all publications:
+output/FINAL-foreign.ndjson: 192493 (12.86%)
+output/FINAL-too-late.ndjson: 438724 (29.32%)
+output/FINAL-too-early.ndjson: 7718 (0.52%)
+output/FINAL-renewed.ndjson: 158554 (10.59%)
+output/FINAL-probably-renewed.ndjson: 1112 (0.07%)
+output/FINAL-possibly-renewed.ndjson: 63145 (4.22%)
+output/FINAL-not-renewed.ndjson: 613575 (41.00%)
+output/FINAL-error.ndjson: 21184 (1.42%)
+Total: 1496505
 
-output/FINAL-renewed.ndjson: 158539 (18.96% of US publications)
-output/FINAL-probably-renewed.ndjson: 1112 (0.13% of US publications)
-output/FINAL-possibly-renewed.ndjson: 62430 (7.47% of US publications)
-output/FINAL-not-renewed.ndjson: 614095 (73.44% of US publications)
+Among US publications in renewal range:
+output/FINAL-renewed.ndjson: 158554 (18.96%)
+output/FINAL-probably-renewed.ndjson: 1112 (0.13%)
+output/FINAL-possibly-renewed.ndjson: 63145 (7.55%)
+output/FINAL-not-renewed.ndjson: 613575 (73.36%)
+Total: 836386
 ```
 
 You'll see a number of large files in the `output` directory. These
@@ -99,39 +110,58 @@ Outputs:
 * `1-parsed-renewals.ndjson` - A list of renewal records, each in JSON
   format.
 
-## `2-filter.py`
+## `2-match-renewals.py`
 
-Remove registrations from consideration if there's clearly no point
-in checking for a renewal.
+Match up registrations with their renewals.
 
 Outputs:
 
-* `2-registrations-after-1963.ndjson`: Copyright registrations that
-  happened after 1963. These were renewed automatically, so there's no
-  point in checking for an explicit renewal.
+* `2-registrations-with-renewals.ndjson` - A list of the same
+  registrations from `0-parsed-registrations.ndjson`, except that
+  every registration with one or more renewals has been combined with
+  its renewal information.
 
-* `2-registrations-before-{year}.ndjson` - Registrations that are moot
-  because they happened more than 95 years ago. These books are in the
-  public domain regardless of whether the copyright was
-  renewed, so there's no point checking for a renewal.
+* `2-cross-references-in-foreign-registrations.ndjson` - A list of
+  non-obvious potential foreign registrations, to be used in the next
+  step.
 
-* `2-registrations-foreign.ndjson` - Registrations for foreign works,
+* `2-renewals-with-registrations.ndjson` - A list of renewals that
+  could be matched to a registration.
+
+* `2-renewals-with-no-registrations.ndjson` - A list of renewals that
+  couldn't be matched to a registration. Some of these are renewals
+  for pamphlets and such -- works other than "books proper" -- so
+  although their registrations exist, they aren't in this
+  dataset. Others may represent missing data or errors.
+
+## `3-filter.py`
+
+For each registration, make a decision about the quality of the
+registrations found for it, where it was published, and so on.
+
+Outputs:
+
+* `3-registrations-foreign.ndjson` - Registrations for foreign works,
   interim registrations (used while foreign works were looking for a
   US publisher), and registrations where the place of publication
   looks like a place outside the United States. Foreign works had
   their copyright renewed by treaty, so the absence of a renewal
   doesn't prove anything.
 
-* `2-registrations-in-range.ndjson` - Registrations where the absence
+* `3-registrations-too-early.ndjson` - Registrations that are moot
+  because they happened more than 95 years ago. These books are in the
+  public domain regardless of whether the copyright was
+  renewed, so renewals probably aren't relevant.
+
+* `3-registrations-too-late.ndjson`: Copyright registrations that
+  happened after 1963. These were renewed automatically, so renewals
+  probably aren't relevant.
+
+* `3-registrations-in-range.ndjson` - Registrations where the absence
   of a renewal record could make the difference between still being
   in-copyright and being in the public domain.
 
-* `2-cross-references-in-foreign-registrations` - References in a
-  registration for a foreign publication to _other_ registrations. Those other
-  registrations might also be foreign publications -- we'll check
-  that in the next step.
-
-* `2-registrations-error.ndjson` - Contains about 20,000 registrations
+* `3-registrations-error.ndjson` - Contains about 20,000 registrations
   which can't be processed because they're missing essential
   information. This information might be missing from the original
   registrations, it might be missing from the transcription, or the
@@ -168,14 +198,7 @@ Outputs:
   assuming they're also foreign publications. They'll need to be checked
   manually.
 
-* `3-renewals-with-no-registrations.ndjson` - A list of renewals we
-  didn't match to a registration. Some of these are pamphlets and such
-  -- works other than "books proper" -- so although their
-  registrations exist, they aren't in this dataset. Some of them are
-  renewals for foreign publications, which we eliminated from
-  consideration before even looking at renewals. Others may represent
-  missing data or errors.
-
+* `3-renewals-with-no-registrations.ndjson` - 
 ## `4-sort-it-out.py`
 
 This simple script takes the output files generated by steps 2 and 3,

@@ -25,13 +25,11 @@ probably = Output("probably-renewed")
 possibly = Output("possibly-renewed")
 no = Output("not-renewed")
 foreign = Output("foreign")
-potentially_foreign = Output("potentially-foreign")
 error = Output("error")
-out_of_range = Output("out-of-range")
+too_late = Output("too-late")
+too_early = Output("too-early")
 
 def destination(file, disposition):
-    if disposition.startswith("Potentially foreign"):
-        return potentially_foreign, False
     if 'foreign' in file:
         return foreign
     if 'registrations-too-late' in file:
@@ -57,7 +55,6 @@ def destination(file, disposition):
 in_range_outputs = [yes, probably, possibly, no]
 all_outputs = [
     foreign,
-    potentially_foreign,
     too_late,
     too_early,
     yes,
@@ -76,9 +73,9 @@ for file in (
 ):
     path = "output/%s.ndjson"
     for i in open(path % file):
-        data = Registration.from_json(json.loads(i))
-        dest = destination(file, data.disposition)
-        dest.output(data)
+            data = Registration.from_json(json.loads(i))
+            dest = destination(file, data.disposition)
+            dest.output(data)
 
 in_range_total = sum(x.count for x in in_range_outputs)
 grand_total = sum(x.count for x in all_outputs)
@@ -86,7 +83,9 @@ grand_total = sum(x.count for x in all_outputs)
 print("Among all publications:")
 for output in all_outputs:
     print(output.tally(grand_total))
+print("Total: %s" % grand_total)
 print("")
 print("Among US publications in renewal range:")
 for output in in_range_outputs:
     print(output.tally(in_range_total))
+print("Total: %s" % in_range_total)

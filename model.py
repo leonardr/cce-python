@@ -424,7 +424,7 @@ class Registration(XMLParser):
 
     NUMBER_AND_DATE_XREF = re.compile("(A[A-Z]?[0-9-]+)[;,] ?([0-9]{,2}[A-Z][a-z]{2}[0-9]{2})")
     POSSIBLE_NUMBER_XREF = re.compile("(A{1,2}[0-9-]{4,})")
-
+    
     @property
     def places(self):
         """All places mentioned in the context of where this book was published."""
@@ -553,6 +553,13 @@ class Renewal(object):
     def __getattr__(self, k):
         return self.data[k]
 
+    REG_NUMBER = re.compile("A[A-Z]?-?[0-9]+")
+
+    @classmethod
+    def extract_regnums(cls, x):
+        t = x['full_text']
+        return [x.replace("-", "") for x in cls.REG_NUMBER.findall(t)]
+    
     @classmethod
     def from_dict(cls, d):
         uuid = d['entry_id']
@@ -563,12 +570,21 @@ class Renewal(object):
         renewal_id = d['id']
         renewal_date = d.get('dreg', None)
         new_matter = d['new_matter']
+        full_text = d['full_text']
         see_also_renewal = [x for x in d['see_also_ren'].split("|") if x]
         see_also_registration = [x for x in d['see_also_reg'].split("|") if x]
+        if not regnum:
+            regnum = cls.extract_regnums(d)
+            if regnum:
+                if len(regnum) == 1:
+                    [regnum] = regnum
+            else:
+                regnum = None
         return cls(
             uuid=uuid, regnum=regnum, reg_date=reg_date,
             renewal_id=renewal_id, renewal_date=renewal_date,
             author=author, title=title, new_matter=new_matter,
             see_also_renewal=see_also_renewal,
-            see_also_registration=see_also_registration
+            see_also_registration=see_also_registration,
+            full_text=full_text
         )

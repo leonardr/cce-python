@@ -53,7 +53,7 @@ class Processor(object):
         for regnum in registration.regnums:
             if regnum in self.foreign_xrefs:
                 registration.warnings.append(
-                    "Potentially foreign -- mentioned in a registration for a likely foreign publication."
+                    "Possible foreign publication -- mentioned in a registration for a likely foreign publication."
                 )
                 registration.extra['foreign_registration'] = self.foreign_xrefs[regnum][0].jsonable(compact=True)
                 registration.disposition = "Possible foreign publication - check manually."

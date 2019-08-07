@@ -8,19 +8,24 @@ class Comparator(object):
         self.renewals = defaultdict(list)
         for i in open(renewals_input_path):
             renewal = Renewal(**json.loads(i))
-            self.renewals[renewal.regnum].append(renewal)
+            regnum = renewal.regnum
+            if not isinstance(regnum, list):
+                regnum = [regnum]
+            for r in regnum:
+                r = r.replace("-", "")
+                self.renewals[r].append(renewal)
 
         self.used_renewals = set()
        
     def renewal_for(self, registration):
         """Find a renewal for this registration.
         
-        If there's more than one, find the best one that meets minimum
-        
+        If there's more than one, find the best one.
         """
         renewals = []
         renewal = None
         for regnum in registration.regnums:
+            renum = regnum.replace("-", "")
             if regnum in self.renewals:
                 renewals.extend(self.renewals[regnum])
         if renewals:
