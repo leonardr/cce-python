@@ -115,15 +115,20 @@ class Publisher(XMLParser):
         self.nonclaimants = nonclaimants
         self.extra = extra
 
-    def jsonable(self):
-        return dict(
+    def jsonable(self, compact=False):
+        data = dict(
             dates=self.dates,
             places=self.places,
             claimants=self.claimants,
             nonclaimants=self.nonclaimants,
             extra=self.extra
         )
-
+        if compact:
+            for k in data.keys():
+                if not data[k]:
+                    del data[k]
+        return data
+        
     @classmethod
     def from_json(cls, data):
         return cls(**data)
@@ -219,7 +224,7 @@ class Registration(XMLParser):
         self.disposition = disposition
         self.renewals = renewals
         
-    def jsonable(self, include_others=True):
+    def jsonable(self, include_others=True, compact=False):
         data = dict(
             uuid=self.uuid,
             regnums=self.regnums,
@@ -227,7 +232,7 @@ class Registration(XMLParser):
             title=self.title,
             authors=self.authors,
             notes=self.notes,
-            publishers=[self._json(p) for p in self.publishers],
+            publishers=[self._json(p, compact=compact) for p in self.publishers],
             previous_regnums=self.previous_regnums,
             previous_publications=self.previous_publications,
             extra=self.extra,
@@ -236,19 +241,19 @@ class Registration(XMLParser):
             disposition=self.disposition,
         )
         if self.renewals:
-            data['renewals'] = [self._json(x) for x in self.renewals]
+            data['renewals'] = [self._json(x, compact=compact) for x in self.renewals]
         if include_others and self.parent:
-            parent = self._json(self.parent, include_others=False)
+            parent = self._json(self.parent, include_others=False, compact=compact)
         else:
             parent = None
         data['parent'] = parent
         if include_others:
             xrefs = [
-                self._json(xref, include_others=False)
+                self._json(xref, include_others=False, compact=compact)
                 for xref in self.xrefs
             ]
             children = [
-                self._json(child, include_others=False)
+                self._json(child, include_others=False, compact=compact)
                 for child in self.children
             ]
         else:
@@ -256,10 +261,19 @@ class Registration(XMLParser):
             xrefs = []
         data['children'] = children
         data['xrefs'] = xrefs
+        if compact:
+            for k in data.keys():
+                if not data[k]:
+                    del data[k]
         return data
 
-    def _json(self, x, **kwargs):
+    def _json(self, x, compact=False, **kwargs):
         if isinstance(x, dict):
+            if compact:
+                x = dict(x)
+                for k in x.keys():
+                    if not x[k]:
+                        del x[k]
             return x
         return x.jsonable(**kwargs)
 

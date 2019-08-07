@@ -1,3 +1,4 @@
+from model import Registration
 import json
 
 class Output(object):
@@ -7,7 +8,8 @@ class Output(object):
         self.count = 0
 
     def output(self, i):
-        self.out.write(i)
+        json.dump(i.jsonable(compact=True), self.out)
+        self.out.write("\n")
         self.count += 1
 
     def tally(self, total, of_what):
@@ -51,9 +53,9 @@ for file in (
 ):
     path = "output/%s.ndjson"
     for i in open(path % file):
-        data = json.loads(i)
-        dest = destination(file, data['disposition'])
-        dest.output(i)
+        data = Registration.from_json(json.loads(i))
+        dest = destination(file, data.disposition)
+        dest.output(data)
 
 outputs = [yes, probably, possibly, no]
 total = sum(x.count for x in outputs)

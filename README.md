@@ -71,7 +71,7 @@ files represent the work product of each step in the process. The
 files you're most likely interested in are the `FINAL-` series,
 mentioned above. These files represent this project's final
 conclusions about which books were renewed and which weren't; which
-books were published in the US and whcih weren't.
+books were published in the US and which weren't.
 
 If you think there's been a mistake or a bad assumption somewhere in
 this process, it's easy to fix. Change the corresponding script,
