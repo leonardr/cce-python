@@ -175,7 +175,7 @@ class Places(object):
             if i not in ("United States Of America", "Georgia"):
                 self.foreign_countries.add(i)
                 self.foreign_country_endings.add(", " + i)
-        for name in ('England', 'Scotland'):
+        for name in ('England', 'Scotland', 'Eng.'):
             self.foreign_countries.add(i)
             self.foreign_country_endings.add(", " + i)
 
