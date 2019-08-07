@@ -51,7 +51,7 @@ class Comparator(object):
         for renewal in renewals:
             # These renewals have been matched; they should not be
             # output in the list of unmatched renewals.
-            self.used_renewals.add(renewal.regnum)
+            self.used_renewals.add(renewal)
         return renewals
 
     def best_renewal(self, registration, renewals):

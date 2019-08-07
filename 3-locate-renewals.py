@@ -51,10 +51,10 @@ for i in open("output/2-registrations-in-range.ndjson"):
 # Now that we're done, we can divide up the renewals by whether or not
 # we found a registration for them.
 for regnum, renewals in comparator.renewals.items():
-    if regnum in comparator.used_renewals:
-        out = renewals_not_matched
-    else:
-        out = renewals_matched
-    for r in renewals:
-        json.dump(r.jsonable(), out)
+    for renewal in renewals:
+        if renewal in comparator.used_renewals:
+            out = renewals_not_matched
+        else:
+            out = renewals_matched
+        json.dump(renewal.jsonable(), out)
         out.write("\n")

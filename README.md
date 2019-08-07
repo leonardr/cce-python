@@ -49,10 +49,9 @@ Then run the scripts, one after another:
 ```
 python 0-parse-registrations.py
 python 1-parse-renewals.py
-python 2-normalize.py
-python 3-handle-easy-cases.py
-python 4-handle-multiple-renewals.py
-python 5-sort-it-out.py
+python 2-filter.py
+python 3-locate-renewals.py
+python 4-sort-it-out.py
 ```
 
 The final script's output will look something like this:
@@ -102,10 +101,7 @@ Outputs:
 * `1-parsed-renewals.ndjson` - A list of renewal records, each in JSON
   format.
 
-## `2-normalize.py`
-
-Normalize the registration data so that it's easier to compare with
-the renewal data.
+## `2-filter.py`
 
 Remove registrations from consideration if there's clearly no point
 in checking for a renewal.
@@ -122,29 +118,29 @@ Outputs:
   renewed, so there's no point checking for a renewal.
 
 * `2-registrations-foreign.ndjson` - Registrations for foreign works,
-  or for works where the place of publication was obviously a place
-  outside the United States. These works had their copyright renewed
-  by treaty, so the absence of a renewal doesn't prove anything.
-
-* `2-registrations-interim.ndjson` - Interim registrations for foreign
-  works. These are set aside for the same reason as other registrations
-  for foreign works.
+  interim registrations (used while foreign works were looking for a
+  US publisher), and registrations where the place of publication
+  looks like a place outside the United States. Foreign works had
+  their copyright renewed by treaty, so the absence of a renewal
+  doesn't prove anything.
 
 * `2-registrations-in-range.ndjson` - Registrations where the absence
   of a renewal record could make the difference between still being
   in-copyright and being in the public domain.
 
-* `2-cross-references-in-foreign-registrations` - Contains a few
-  hundred strings that look like references in a foreign copyright
-  registration to another registration. This might indicate that 
+* `2-cross-references-in-foreign-registrations` - References in a
+  registration for a foreign publication to _other_ registrations. Those other
+  registrations might also be foreign publications -- we'll check
+  that in the next step.
 
-* `2-registrations-error.ndjson` - Contains about 20,000
-  registrations which can't be processed because they're
-  missing essential information. This information might be missing
-  from the original registrations, but it's more likely missing from
-  the transcription.
+* `2-registrations-error.ndjson` - Contains about 20,000 registrations
+  which can't be processed because they're missing essential
+  information. This information might be missing from the original
+  registrations, it might be missing from the transcription, or the
+  information might be represented in a form that these scripts can't
+  understand.
 
-## `3-handle-easy-cases.py`
+## `3-locate-renewals.py`
 
 This script takes `2-registrations-in-range.ndjson` as input, and
 compares the registration information against the renewal information
@@ -152,59 +148,53 @@ from `1-parsed-renewals.ndjson`.
 
 Most of the time, this check is really easy. Either there is a renewal
 (the book is still in copyright) or there isn't (the copyright has
-lapsed). This script handles all of these easy cases and leaves a much
-smaller set of difficult cases for the next script to process.
+lapsed). But sometimes the renewal looks like it might actually be for
+a different book. Sometimes there are _multiple_ renewals, and all of
+them look bad. This script does the best it can.
 
 Outputs:
 
-* `3-registrations-with-no-renewal.ndjson` - Registrations with no
-  corresponding renewal. These books are almost certainly in the public
-  domain.
+* `3-registrations-with-no-renewal.ndjson` - Registrations for
+  US-published works with no corresponding renewal at all. These books
+  are almost certainly in the public domain.
 
-* `3-registrations-with-renewal.ndjson` - Registrations with an
-  obvious corresponding renewal. These books are almost certainly
-  still in copyright.
-  
-* `3-registrations-to-check.ndjson` - The difficult cases.
-  These will be handled in the next script.
+* `3-registrations-with-renewal.ndjson` - Registrations for
+  US-published works where at least one corresponding renewal was
+  found. This includes books where we're really certain about the
+  match between registration and renewal, books where we're fairly
+  certain, and books where it doesn't look like the renewals
+  have anything to do with the original publication.
 
-* `3-renewals-with-no-registrations.ndjson` - A list of renewals where we
-  found no corresponding registration. These are mostly periodicals
-  and such -- works other than "books proper" -- so although their
-  registrations exist, they aren't in this dataset.
+* `3-potentially-foreign-registrations.ndjson` - These registrations
+  were mentioned in a registration for a foreign publication, so we're
+  assuming they're also foreign publications. They'll need to be checked
+  manually.
 
-## `4-handle-multiple-renewals.py`
+* `3-renewals-with-no-registrations.ndjson` - A list of renewals we
+  didn't match to a registration. Some of these are pamphlets and such
+  -- works other than "books proper" -- so although their
+  registrations exist, they aren't in this dataset. Some of them are
+  renewals for foreign publications, which we eliminated from
+  consideration before even looking at renewals. Others may represent
+  missing data or errors.
 
-This script handles the cases where multiple renewals were found for a
-single registration ID. Generally speaking, this isn't supposed to
-happen, but when it does happen, we can usually figure out which of
-the renewals is the 'real' one. Or, all the renewals may be false
-positives, in which case the registration was not renewed at all.
+## `4-sort-it-out.py`
 
-Outputs:
-
-* `4-probably-renewed.ndjson` - We're pretty sure we were able to find
-  a renewal for this work, so it's probably in copyright, but it
-  needs to be checked manually.
-* `4-probably-not-renewed.ndjson` - None of the renewals look like a
-  match, so this work is probably out of copyright, but it needs to
-  be checked manually.
-
-## `5-sort-it-out.py`
-
-This simple script takes the output files generated by steps 3 and 4,
+This simple script takes the output files generated by steps 2 and 3,
 and consolidates them into four files:
 
-* `FINAL-renewed.ndjson`: These books were almost certainly renewed
-  and are still in copyright.
+* `FINAL-foreign.ndjson`: These books appear to be foreign
+   publications, or were mentioned in a foreign publication, so we
+   didn't even check to see if they had renewal records.
 * `FINAL-not-renewed.ndjson`: These books were almost certainly not
   renewed and are now in the public domain.
 * `FINAL-probably-renewed.ndjson`: These books were probably renewed,
   but a manual check is necessary to make sure.
-* `FINAL-probably-not-renewed.ndjson`: These books were probably not
-  renewed, but a manual check is necessary to make sure.
+* `FINAL-possibly-renewed.ndjson`: These books had one or more renewal
+  records, but none of them seemed like a good match. A manual check
+  is necessary to verify that these 
 
-These files represent the final product. At this point you can take
+These files represent the final work product. At this point you can take
 one or more of them and use them in your own research.
 
 # Dispositions
@@ -217,32 +207,40 @@ are the possible dispositions:
    complicating factors. The copyright on this book has
    almost certainly lapsed.
 
-* `Renewed.` - One renewal record was found and it's an exact
-   match. This book is almost certainly still in copyright.
+* `Renewed (date match).` - A renewal was found which has a date match
+  with the original registration. That's almost certainly the 'real'
+  renewal, and if so, this book is still in copyright.
 
-* `Probably renewed, but registration dates don't match.` - There was
-   a single renewal for the registration ID, but the dates didn't
-   match. This is most likely an error in the digitized data, and the
-   work is almost certainly still in copyright.
+* `Probably renewed (author match).` - There was no date match, but
+  one of the renewals has the same author as the one mentioned in this
+  registration. That's probably the 'real' renewal, and if so, this
+  book is still in copyright.
 
-* `Renewed (date match).` - There were multiple renewals for the
-  registration ID, but one of them has a date match with the original
-  registration. That's almost certainly the 'real' renewal, and if so,
-  this book is still in copyright.
+* `Probably renewed (title match).` - There was no date or author
+  match, but one of the renewals has a similar title to the one
+  mentioned in the registration. That's probably the 'real' renewal,
+  and if so, this book is still in copyright.
 
-* `Probably renewed (author match).` - There were multiple renewals for
-  the registration ID, and there was no date match, but one of the
-  renewals has the same author as this book. That's probably the
-  'real' renewal, and if so, this book is still in copyright.
+* `Possibly renewed, but none of these renewals seem like a good
+   match.` - One or more renewals was found based on the registration
+   ID, but the other data doesn't match. Since renewal IDs were reused
+   over time, this may or may not mean that this particular
+   publication had its copyright renewed. It needs to be checked
+   manually.
 
-* `Probably renewed (title match).` - There were multiple renewals for
-  the registration ID, and there was no date or author match, but one
-  of the renewals has a close title match for this book. That's
-  probably the 'real' renewal, and if so, this book is still in
-  copyright.
+* `Foreign publication.` - There's strong evidence that this work is a
+  foreign publication. If so, then its copyright was restored by
+  treaty and the presence or absence of a renewal is irrelevant.
 
-* `Probably not renewed (could not confirm match).` - There were
-   multiple renewals for the registration ID, but none of them seemed
-   actually related to this book. There was no date, author, or title
-   match. It's best to check this one manually to see what happened.
+* `Possible foreign publication - check manually.` - This work was
+  mentioned in the registration record for a foreign publication. This
+  may mean that it, itself, is a foreign publication. It needs to be
+  checked manually.
 
+* `Classified with parent.` - This work was grouped beneath another
+  registration, and the parent registration was removed from
+  consideration -- probably because it was post-1963 or because it was
+  a foreign work. In the absence of strong evidence to the contrary,
+  all of its children were also removed from consideration, but they
+  were given a different `disposition` in case you want to check them
+  manually.

@@ -36,6 +36,7 @@ class Processor(object):
         if registration.is_foreign:
             # We have good evidence that this is a foreign
             # registration.
+            registration.disposition = "Foreign publication."
             return self.foreign
 
         if not registration.regnums:
@@ -49,8 +50,10 @@ class Processor(object):
                 registration, "No registration or publication date."
             )
         if reg_date.year < self.CUTOFF_YEAR:
+            registration.disposition == 'Published before cutoff year.'
             return self.too_old
         elif reg_date.year > 1963:
+            registration.disposition == 'Published after cutoff  year.'
             return self.too_new
         else:
             return self.in_range
@@ -76,6 +79,7 @@ class Processor(object):
             child_output = self.disposition(child)
             child.parent = registration
             if child_output == self.in_range and output != self.in_range:
+                child.disposition = "Classified with parent."
                 child.warnings.append(
                     "This registration seems like a good candidate, but it was associated with a registration which was deemed not to be a candidate. To be safe, this registration will be put in the same category as its 'parent'; it should be checked manually."
                 )
