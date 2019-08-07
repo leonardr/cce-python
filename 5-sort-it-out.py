@@ -10,11 +10,12 @@ class Output(object):
         self.out.write(i)
         self.count += 1
 
-    def tally(self, total):
+    def tally(self, total, of_what):
         if not total:
             return "%s: %s" % (self.path, self.count)
-        return "%s: %s (%.2f%%)" % (
-            self.path, self.count, self.count / float(total) * 100
+        return "%s: %s (%.2f%% of %s)" % (
+            self.path, self.count, self.count / float(total) * 100,
+            of_what
         )
 
 yes = Output("renewed")
@@ -57,7 +58,7 @@ for file in (
 outputs = [yes, probably, possibly, no]
 total = sum(x.count for x in outputs)
         
-print(foreign.tally(total+foreign.count))
+print(foreign.tally(total+foreign.count, "total"))
 print("")
 for output in outputs:
-    print(output.tally(total))
+    print(output.tally(total, "US publications"))

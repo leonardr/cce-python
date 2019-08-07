@@ -58,17 +58,20 @@ python 5-sort-it-out.py
 The final script's output will look something like this:
 
 ```
-output/FINAL-renewed.ndjson: 158019 (18.73%)
-output/FINAL-not-renewed.ndjson: 622455 (73.79%)
-output/FINAL-probably-renewed.ndjson: 61494 (7.29%)
-output/FINAL-probably-not-renewed.ndjson: 1578 (0.19%)
+output/FINAL-foreign.ndjson: 192473 (18.71% of total)
+
+output/FINAL-renewed.ndjson: 158555 (18.96% of US publications)
+output/FINAL-probably-renewed.ndjson: 1112 (0.13% of US publications)
+output/FINAL-possibly-renewed.ndjson: 62437 (7.47% of US publications)
+output/FINAL-not-renewed.ndjson: 614283 (73.44% of US publications)
 ```
 
 You'll see a number of large files in the `output` directory. These
 files represent the work product of each step in the process. The
 files you're most likely interested in are the `FINAL-` series,
 mentioned above. These files represent this project's final
-conclusions about which books were renewed and which weren't.
+conclusions about which books were renewed and which weren't; which
+books were published in the US and whcih weren't.
 
 If you think there's been a mistake or a bad assumption somewhere in
 this process, it's easy to fix. Change the corresponding script,
