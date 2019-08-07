@@ -224,7 +224,7 @@ class Registration(XMLParser):
         self.disposition = disposition
         self.renewals = renewals
         
-    def jsonable(self, include_others=True, compact=False):
+    def jsonable(self, include_others=True, compact=False, require_disposition=False):
         data = dict(
             uuid=self.uuid,
             regnums=self.regnums,
@@ -240,6 +240,8 @@ class Registration(XMLParser):
             error=self.error,
             disposition=self.disposition,
         )
+        if not self.disposition and require_disposition:
+            raise Exception("Disposition not set for %r" % data)
         if self.renewals:
             data['renewals'] = [self._json(x, compact=compact) for x in self.renewals]
         if include_others and self.parent:
