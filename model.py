@@ -175,9 +175,9 @@ class Places(object):
             if i not in ("United States Of America", "Georgia"):
                 self.foreign_countries.add(i)
                 self.foreign_country_endings.add(", " + i)
-        for name in ('England', 'Scotland', 'Eng.'):
-            self.foreign_countries.add(i)
-            self.foreign_country_endings.add(", " + i)
+        for name in ('England', 'Scotland', 'Eng.', 'U.K.', 'UK'):
+            self.foreign_countries.add(name)
+            self.foreign_country_endings.add(", " + name)
 
     def is_foreign(self, place):
         """Make a best guess as to whether a place name is in
@@ -188,6 +188,10 @@ class Places(object):
         if place in self.FOREIGN_CITIES:
             return True
         if place in self.foreign_countries:
+            return True
+        if ',' in place and any(x in place for x in self.FOREIGN_CITIES):
+            # This will incorrectly flag "London, Ontario" but it will
+            # correctly flag "London, New York", which is more common.
             return True
         if any(place.endswith(x) for x in self.foreign_country_endings):
             return True
