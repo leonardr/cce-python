@@ -108,12 +108,12 @@ class Publisher(XMLParser):
     """Represents information about the publisher(s) associated with a
     Registration, and the time and circumstances of publication.
     """
-    def __init__(self, dates, places, claimants, nonclaimants, extra):
-        self.dates = dates
-        self.places = places
-        self.claimants = claimants
-        self.nonclaimants = nonclaimants
-        self.extra = extra
+    def __init__(self, dates=None, places=None, claimants=None, nonclaimants=None, extra=None):
+        self.dates = dates or []
+        self.places = places or []
+        self.claimants = claimants or []
+        self.nonclaimants = nonclaimants or []
+        self.extra = extra or {}
 
     def jsonable(self, compact=False):
         data = dict(
@@ -207,7 +207,7 @@ class Registration(XMLParser):
             error=None, disposition=None, renewals=None
     ):
         self.uuid = uuid
-        self.regnums = [x for x in regnums if x] or []
+        self.regnums = [x for x in (regnums or []) if x]
         self.reg_dates = reg_dates or []
         self.title = title
         self.authors = authors or []
@@ -432,6 +432,44 @@ class Registration(XMLParser):
             for place in pub['places']:
                 yield place
 
+    csv_row_labels = 'title parent_title author parent_author regnum parent_regnum claimants place_of_publication disposition warnings'.split()
+                
+    @property
+    def csv_row(self):
+        publishers = [Publisher(**p) for p in self.publishers]
+        pub_places = []
+        claimants = []
+        for pub in publishers:
+            for c in pub.claimants:
+                if c:
+                    claimants.append(c)
+            for p in pub.places:
+                if p:
+                    pub_places.append(p)
+        pub_places = ", ".join(pub_places)
+        claimants = ", ".join(claimants)
+        reg_date = self.best_guess_registration_date
+
+        if self.parent:
+            parent = Registration(**self.parent)
+            parent_regnums = ", ".join(parent.regnums)
+            parent_title = parent.title
+            parent_author = ", ".join(parent.authors)
+        else:
+            parent_title = None
+            parent_author = None
+            parent_regnums = None
+
+        base = [
+            self.title, parent_title, ", ".join(self.authors), parent_author, 
+            ", ".join(self.regnums), parent_regnums, claimants, pub_places, self.disposition, "\n".join(self.warnings)
+        ]
+            
+        for r in (self.renewals or []): 
+            r = Renewal(**r)
+            base += r.csv_row
+        return base
+                
     def parse_xrefs(self):
         """Look for cross-references to other registrations in the 'notes'
         field of this registration.
@@ -493,7 +531,7 @@ class Registration(XMLParser):
     @property
     def publication_dates(self):
         for p in self.publishers:
-            for d in p['dates']:
+            for d in p.get('dates', []):
                 parsed = self._normalize_date(d)
                 if parsed:
                     yield parsed
@@ -544,6 +582,8 @@ class Registration(XMLParser):
         
 class Renewal(object):
 
+    csv_row_labels = 'renewal_id renewal_date renewal_registration registration_date renewal_title renewal_author'.split()
+    
     def __init__(self, **data):
         self.data = data
 
@@ -553,8 +593,26 @@ class Renewal(object):
     def __getattr__(self, k):
         return self.data[k]
 
+    @property
+    def csv_row(self):
+        return [
+            self.data.get('renewal_id'),
+            self.data.get('renewal_date'),
+            self.regnum, 
+            self.data.get('reg_date'),
+            self.data.get('title'),
+            self.data.get('author'),
+        ]
+    
     REG_NUMBER = re.compile("A[A-Z]?-?[0-9]+")
 
+    @property
+    def regnum(self):
+        r = self.data.get('regnum', None)
+        if isinstance(r, list):
+            return ", ".join(r)
+        return r
+    
     @classmethod
     def extract_regnums(cls, x):
         t = x['full_text']

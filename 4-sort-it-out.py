@@ -2,14 +2,17 @@ from model import Registration
 import json
 from pdb import set_trace
 
+
 class Output(object):
+    COMPACT = True
+
     def __init__(self, base):
         self.path = "output/FINAL-%s.ndjson" % base
         self.out = open(self.path, "w")
         self.count = 0
 
     def output(self, i):
-        json.dump(i.jsonable(compact=True), self.out)
+        json.dump(i.jsonable(compact=self.COMPACT), self.out)
         self.out.write("\n")
         self.count += 1
 
