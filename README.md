@@ -278,10 +278,11 @@ are the possible dispositions:
   foreign publication. If so, then its copyright was restored by
   treaty and the presence or absence of a renewal is irrelevant.
 
-* `Possible foreign publication - check manually.` - This work was
-  mentioned in the registration record for a foreign publication. This
-  may mean that it, itself, is a foreign publication. It needs to be
-  checked manually.
+* `Possible foreign publication -- mentioned in a registration for a
+  likely foreign publication.` - This work was mentioned in the
+  registration record for a foreign publication. This may mean that
+  it, itself, is a foreign publication. It needs to be checked
+  manually.
 
 * `Classified with parent.` - This work was grouped beneath another
   registration, and the parent registration was removed from
@@ -290,3 +291,21 @@ are the possible dispositions:
   all of its children were also removed from consideration, but they
   were given a different `disposition` in case you want to check them
   manually.
+
+* `Not a book proper.` - This registration is for something other than
+  a 'book proper' -- a pamphlet or serial, for instance. These can be
+  renewed and can fall into the public domain, just like books, but we
+  don't have complete data for them, so we can't draw any conclusions
+  about them, and they're excluded.
+
+* `Published before cutoff year.` - This registration happened more
+  than 95 years ago, so the question of renewal is moot -- the
+  copyright has expired.
+
+* `Published after cutoff year.` - This registration happened after
+  1963, so the question of renewal is moot -- the copyright was
+  renewed automatically.
+
+* `Error.` - The data associated with this registration was missing
+  essential information, and it couldn't be processed.
+  
