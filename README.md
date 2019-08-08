@@ -25,6 +25,16 @@ Thanks are due to [Sean Redmond](https://github.com/seanredmond),
   necessary to make sure.
 * About 73% definitely have no renewal record.
 
+# Getting the Data
+
+The best way to get this data is to generate it yourself by following
+the instructions below.
+
+If you just want a quick overview listing renewed and unrenewed books,
+you can find a simplified version of these results in the
+[cce-spreadsheets](https://github.com/leonardr/cce-spreadsheets)
+project.
+
 # Generating the Data
 
 First, clone this repository and initialize the submodules. This will
