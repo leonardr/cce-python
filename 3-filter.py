@@ -23,6 +23,7 @@ class Processor(object):
     CUTOFF_YEAR = datetime.datetime.utcnow().year - 95
 
     def __init__(self):
+        self.not_books_proper = open("output/3-registrations-not-books-proper.ndjson", "w")
         self.foreign = open("output/3-registrations-foreign.ndjson", "w")
         self.too_old = open("output/3-registrations-too-early.ndjson", "w")
         self.too_new = open("output/3-registrations-too-late.ndjson", "w")
@@ -50,7 +51,10 @@ class Processor(object):
             registration.disposition = "Foreign publication."
             return self.foreign
 
+        book_proper = False
         for regnum in registration.regnums:
+            if regnum[0] in ('a', 'A'):
+                book_proper = True
             if regnum in self.foreign_xrefs:
                 registration.warnings.append(
                     "Possible foreign publication -- mentioned in a registration for a likely foreign publication."
@@ -64,6 +68,10 @@ class Processor(object):
                 registration, "No registration number."
             )
 
+        if not book_proper:
+            registration.disposition = "Not a book proper."
+            return self.not_books_proper
+        
         reg_date = registration.best_guess_registration_date
         if not reg_date:
             return self.error(

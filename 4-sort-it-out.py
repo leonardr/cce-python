@@ -24,6 +24,7 @@ class Output(object):
         )
 
 yes = Output("renewed")
+not_books_proper = Output("not-books-proper")
 probably = Output("probably-renewed")
 possibly = Output("possibly-renewed")
 no = Output("not-renewed")
@@ -39,6 +40,8 @@ def destination(file, disposition):
         return too_late
     if 'registrations-too-early' in file:
         return too_early
+    if 'not-books-proper' in file:
+        return not_books_proper
     if 'error' in file:
         return error
     if disposition.startswith("Probably renewed"):
@@ -64,6 +67,7 @@ all_outputs = [
     probably,
     possibly,
     no,
+    not_books_proper,
     error,
 ]
 
@@ -72,6 +76,7 @@ for file in (
         "3-registrations-foreign",
         "3-registrations-too-late",
         "3-registrations-too-early",
+        "3-registrations-not-books-proper",
         "3-registrations-error",
 ):
     path = "output/%s.ndjson"
