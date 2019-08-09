@@ -17,7 +17,7 @@ Thanks are due to [Sean Redmond](https://github.com/seanredmond),
 
 # Statistics
 
-* There are about 810,000 books where a renewal record would be
+* There are about 800,000 books where a renewal record would be
   necessary for the work to still be in copyright today.
 * Of these, about 19% definitely have a renewal record and are still
   in copyright.
@@ -66,23 +66,23 @@ The final script's output will look something like this:
 
 ```
 Among all publications:
-output/FINAL-foreign.ndjson: 192449 (12.86%)
-output/FINAL-too-late.ndjson: 428579 (28.64%)
-output/FINAL-too-early.ndjson: 7534 (0.50%)
-output/FINAL-renewed.ndjson: 156179 (10.44%)
-output/FINAL-probably-renewed.ndjson: 1093 (0.07%)
-output/FINAL-possibly-renewed.ndjson: 64415 (4.30%)
-output/FINAL-not-renewed.ndjson: 588880 (39.35%)
-output/FINAL-not-books-proper.ndjson: 36336 (2.43%)
+output/FINAL-foreign.ndjson: 198041 (13.23%)
+output/FINAL-too-late.ndjson: 428569 (28.64%)
+output/FINAL-too-early.ndjson: 7359 (0.49%)
+output/FINAL-renewed.ndjson: 153888 (10.28%)
+output/FINAL-probably-renewed.ndjson: 1077 (0.07%)
+output/FINAL-possibly-renewed.ndjson: 63720 (4.26%)
+output/FINAL-not-renewed.ndjson: 586491 (39.19%)
+output/FINAL-not-books-proper.ndjson: 36320 (2.43%)
 output/FINAL-error.ndjson: 21040 (1.41%)
 Total: 1496505
 
 Among US publications in renewal range:
-output/FINAL-renewed.ndjson: 156179 (19.27%)
-output/FINAL-probably-renewed.ndjson: 1093 (0.13%)
-output/FINAL-possibly-renewed.ndjson: 64415 (7.95%)
-output/FINAL-not-renewed.ndjson: 588880 (72.65%)
-Total: 810567
+output/FINAL-renewed.ndjson: 153888 (19.11%)
+output/FINAL-probably-renewed.ndjson: 1077 (0.13%)
+output/FINAL-possibly-renewed.ndjson: 63720 (7.91%)
+output/FINAL-not-renewed.ndjson: 586491 (72.84%)
+Total: 805176
 ```
 
 You'll see a number of large files in the `output` directory. These
