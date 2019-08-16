@@ -12,7 +12,7 @@ class Comparator(object):
             if not isinstance(regnum, list):
                 regnum = [regnum]
             for r in regnum:
-                r = r.replace("-", "")
+                r = (r or "").replace("-", "")
                 self.renewals[r].append(renewal)
 
         self.used_renewals = set()
