@@ -5,7 +5,10 @@ import json
 
 class Comparator(object):
     def __init__(self, renewals_input_path):
+
         self.renewals = defaultdict(list)
+        self.renewals_by_title = defaultdict(list)
+
         for i in open(renewals_input_path):
             renewal = Renewal(**json.loads(i))
             regnum = renewal.regnum
@@ -16,7 +19,8 @@ class Comparator(object):
             for r in regnum:
                 r = (r or "").replace("-", "")
                 self.renewals[r].append(renewal)
-
+            title = Registration._normalize_text(renewal.title) or renewal.title
+            self.renewals_by_title[title].append(renewal)
         self.used_renewals = set()
        
     def renewal_for(self, registration):
@@ -36,10 +40,21 @@ class Comparator(object):
         else:
             registration.disposition = "Not renewed."
             renewals = []
+
+        if not renewals:
+            # We'll count it as a tentative match if there has _ever_ been a renewal
+            # for a book with a nearly-identical title.
+            title = Registration._normalize_text(registration.title) or registration.title
+            renewals_for_title = self.renewals_by_title[title]
+            if renewals_for_title:
+                renewals, disposition = self.best_renewal(registration, renewals_for_title)
+                registration.disposition = "Possibly renewed, based solely on title match."
+
         for renewal in renewals:
             # These renewals have been matched; they should not be
             # output in the list of unmatched renewals.
             self.used_renewals.add(renewal)
+            
         return renewals
 
     def best_renewal(self, registration, renewals):

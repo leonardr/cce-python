@@ -21,9 +21,9 @@ Thanks are due to [Sean Redmond](https://github.com/seanredmond),
   necessary for the work to still be in copyright today.
 * Of these, about 19% definitely have that renewal record and are still
   in copyright.
-* About 8% _seem_ to have a renewal record, but a manual inspection is
+* About 10% _may_ have a renewal record, but a manual inspection is
   necessary to make sure.
-* About 73% definitely have no renewal record.
+* About 71% definitely have no renewal record.
 
 # Getting the Data
 
@@ -72,8 +72,8 @@ output/FINAL-too-late.ndjson: 429869 (28.72%)
 output/FINAL-too-early.ndjson: 7374 (0.49%)
 output/FINAL-renewed.ndjson: 136669 (9.13%)
 output/FINAL-probably-renewed.ndjson: 976 (0.07%)
-output/FINAL-possibly-renewed.ndjson: 58521 (3.91%)
-output/FINAL-not-renewed.ndjson: 533958 (35.68%)
+output/FINAL-possibly-renewed.ndjson: 70980 (4.74%)
+output/FINAL-not-renewed.ndjson: 521499 (34.85%)
 output/FINAL-not-books-proper.ndjson: 36408 (2.43%)
 output/FINAL-error.ndjson: 21048 (1.41%)
 Total: 1496505
@@ -81,8 +81,9 @@ Total: 1496505
 Among first US publications in renewal range:
 output/FINAL-renewed.ndjson: 136669 (18.72%)
 output/FINAL-probably-renewed.ndjson: 976 (0.13%)
-output/FINAL-possibly-renewed.ndjson: 58521 (8.02%)
-output/FINAL-not-renewed.ndjson: 533958 (73.13%)
+output/FINAL-possibly-renewed.ndjson: 70980 (9.72%)
+output/FINAL-not-renewed.ndjson: 521499 (71.43%)
+Total: 730124
 ```
 
 You'll see a number of large files in the `output` directory. These
@@ -198,7 +199,9 @@ and consolidates them into a number of files:
   but a manual check is necessary to make sure.
 * `FINAL-possibly-renewed.ndjson`: These books had one or more renewal
   records, but none of them seemed like a good match. A manual check
-  is necessary to see whether the renewals are legit.
+  is necessary to see whether the renewals are legit. In particular,
+  this script will count a tentative match for a book if there's a
+  renewal record for _any_ book with the same title.
 * `FINAL-foreign.ndjson`: These books appear to be foreign
    publications, or were mentioned in a foreign publication, so
    their renewal status probably isn't relevant.

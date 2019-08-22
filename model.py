@@ -605,10 +605,11 @@ class Registration(XMLParser):
             return min(pub)
 
     NOT_ALPHA = re.compile("[^0-9A-Z ]", re.I)
-    def _normalize_text(self, v):
+    @classmethod
+    def _normalize_text(cls, v):
         if not v:
             return ""
-        return self.NOT_ALPHA.sub("", v).lower()
+        return cls.NOT_ALPHA.sub("", v).lower()
 
     def words_match(self, t1, t2, quotient=0.75):
         if not t1 or not t2:
