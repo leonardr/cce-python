@@ -9,6 +9,8 @@ class Comparator(object):
         for i in open(renewals_input_path):
             renewal = Renewal(**json.loads(i))
             regnum = renewal.regnum
+            if not regnum:
+                regnum = []
             if not isinstance(regnum, list):
                 regnum = [regnum]
             for r in regnum:
