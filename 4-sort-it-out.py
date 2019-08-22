@@ -55,7 +55,7 @@ def destination(file, disposition):
     if disposition.startswith("Not renewed"):
         return no
     else:
-        print disposition
+        print(disposition)
         return no
 
 in_range_outputs = [yes, probably, possibly, no]

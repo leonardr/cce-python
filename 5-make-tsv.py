@@ -6,7 +6,7 @@ class Spreadsheet(object):
 
     def __init__(self, output):
         self.out = unicodecsv.writer(
-            open(output, "w"), dialect="excel-tab",
+            open(output, "wb"), dialect="excel-tab",
             encoding="utf-8"
         )
 

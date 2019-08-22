@@ -97,7 +97,7 @@ class XMLParser(object):
                     parsed = None
                 else:
                     break
-            except ValueError, e:
+            except ValueError as e:
                 continue
         if not parsed and warnings is not None:
             msg = "Could not parse date %s" % raw
@@ -124,7 +124,7 @@ class Publisher(XMLParser):
             extra=self.extra
         )
         if compact:
-            for k in data.keys():
+            for k in list(data.keys()):
                 if not data[k]:
                     del data[k]
         return data
@@ -268,7 +268,7 @@ class Registration(XMLParser):
         data['children'] = children
         data['xrefs'] = xrefs
         if compact:
-            for k in data.keys():
+            for k in list(data.keys()):
                 if not data[k]:
                     del data[k]
         return data
@@ -277,7 +277,7 @@ class Registration(XMLParser):
         if isinstance(x, dict):
             if compact:
                 x = dict(x)
-                for k in x.keys():
+                for k in list(x.keys()):
                     if not x[k]:
                         del x[k]
             return x
