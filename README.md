@@ -209,7 +209,7 @@ and consolidates them into a number of files:
   previously published _in the US_. Part or all of the work may still
   be in copyright -- it depends on whether the previous publications
   were registered, and whether the registrations were renewed. This
-  must be done manually.
+  must be checked manually.
 * `FINAL-not-books-proper.ndjson`: These works are not "books proper"
    -- they're periodicals or something else. Their renewal status
    can only be determined once the rest of the CCE is made
