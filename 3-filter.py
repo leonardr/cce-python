@@ -25,6 +25,7 @@ class Processor(object):
     def __init__(self):
         self.not_books_proper = open("output/3-registrations-not-books-proper.ndjson", "w")
         self.foreign = open("output/3-registrations-foreign.ndjson", "w")
+        self.previously_published = open("output/3-registrations-previously-published.ndjson", "w")
         self.too_old = open("output/3-registrations-too-early.ndjson", "w")
         self.too_new = open("output/3-registrations-too-late.ndjson", "w")
         self.in_range = open("output/3-registrations-in-range.ndjson", "w")
@@ -43,7 +44,7 @@ class Processor(object):
         #self.cross_references_from_renewals = json.load(open(
         #    "output/1-renewal-cross-references.json"
         #))
-    
+
     def disposition(self, registration):
         if registration.is_foreign:
             # We have good evidence that this is a foreign
@@ -71,7 +72,8 @@ class Processor(object):
         if not book_proper:
             registration.disposition = "Not a book proper."
             return self.not_books_proper
-        
+
+
         reg_date = registration.best_guess_registration_date
         if not reg_date:
             return self.error(
@@ -83,7 +85,13 @@ class Processor(object):
         elif reg_date.year > 1963:
             registration.disposition == 'Published after cutoff year.'
             return self.too_new
+
+        if registration.previously_published:
+            registration.disposition = "Has previous publications, which must be checked manually."
+            return self.previously_published
+
         return self.in_range
+
 
     def process(self, data):
         registration = Registration.from_json(data)
@@ -105,7 +113,7 @@ class Processor(object):
             if parent_output and output == self.in_range and parent_output != self.in_range:
                 registration.disposition = "Classified with parent."
                 registration.warnings.append(
-                    "This registration seems to be in range, but it was associated with a registration which was a foreign publication or not in range. To be safe, this registration will be put in the same category as its 'parent'; it should be checked manually."
+                    "This registration seems okay, but it was associated with a registration which was a foreign publication, a previously published work, or out of range. To be safe, this registration will be put in the same category as its 'parent'; it should be checked manually."
                 )
                 output = parent_output
 
@@ -130,4 +138,3 @@ for i in open("output/2-registrations-with-renewals.ndjson"):
         print("%d %.2fsec" % (count, after-before))
         before = after
         after = None
-        

@@ -29,6 +29,7 @@ probably = Output("probably-renewed")
 possibly = Output("possibly-renewed")
 no = Output("not-renewed")
 foreign = Output("foreign")
+previously_published = Output("previously-published")
 error = Output("error")
 too_late = Output("too-late")
 too_early = Output("too-early")
@@ -44,6 +45,8 @@ def destination(file, disposition):
         return not_books_proper
     if 'error' in file:
         return error
+    if 'previously-published' in file:
+        return previously_published
     if disposition.startswith("Probably renewed"):
         return probably
     if disposition.startswith("Probably not renewed"):
@@ -61,6 +64,7 @@ def destination(file, disposition):
 in_range_outputs = [yes, probably, possibly, no]
 all_outputs = [
     foreign,
+    previously_published,
     too_late,
     too_early,
     yes,
@@ -74,6 +78,7 @@ all_outputs = [
 for file in (
         "3-registrations-in-range",
         "3-registrations-foreign",
+        "3-registrations-previously-published",
         "3-registrations-too-late",
         "3-registrations-too-early",
         "3-registrations-not-books-proper",
@@ -93,7 +98,7 @@ for output in all_outputs:
     print(output.tally(grand_total))
 print("Total: %s" % grand_total)
 print("")
-print("Among US publications in renewal range:")
+print("Among first US publications in renewal range:")
 for output in in_range_outputs:
     print(output.tally(in_range_total))
 print("Total: %s" % in_range_total)

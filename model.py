@@ -128,7 +128,7 @@ class Publisher(XMLParser):
                 if not data[k]:
                     del data[k]
         return data
-        
+
     @classmethod
     def from_json(cls, data):
         return cls(**data)
@@ -206,7 +206,7 @@ class Registration(XMLParser):
             self, uuid=None, regnums=None, reg_dates=None,
             title=None, authors=None, notes=None,
             publishers=None, previous_regnums=None, previous_publications=None,
-            extra=None, parent=None, children=None,
+            new_matter_claimed=None, extra=None, parent=None, children=None,
             xrefs=None, _is_foreign=None, warnings=None,
             error=None, disposition=None, renewals=None
     ):
@@ -216,6 +216,7 @@ class Registration(XMLParser):
         self.title = title
         self.authors = authors or []
         self.notes = notes or []
+        self.new_matter_claimed = new_matter_claimed
         self.publishers = publishers or []
         self.previous_regnums = previous_regnums or []
         self.previous_publications = previous_publications or []
@@ -227,7 +228,7 @@ class Registration(XMLParser):
         self.error = error
         self.disposition = disposition
         self.renewals = renewals
-        
+
     def jsonable(self, include_others=True, compact=False, require_disposition=False):
         data = dict(
             uuid=self.uuid,
@@ -235,6 +236,7 @@ class Registration(XMLParser):
             reg_dates=self.reg_dates,
             title=self.title,
             authors=self.authors,
+            new_matter_claimed=self.new_matter_claimed,
             notes=self.notes,
             publishers=[self._json(p, compact=compact) for p in self.publishers],
             previous_regnums=self.previous_regnums,
@@ -323,12 +325,16 @@ class Registration(XMLParser):
         previous_regnums = cls.xpath(tag, "prev-regNum")
         previous_publications = cls.xpath(tag, "prevPub")
 
+        new_matter_claimed = cls.xpath(tag, "newMatterClaimed")
+        if new_matter_claimed:
+            print(new_matter_claimed)
+
         # We'll parse out these items and store the data, but they're
         # not currently important to the clearance process.
         extra = {}
         if include_extra:
             for name in [
-                'edition', 'noticedate', 'series', 'newMatterClaimed',
+                'edition', 'noticedate', 'series',
                 'vol', 'desc', 'pubDate', 'volumes',
                 'claimant', 'copies', 'affDate', 'lccn', 'copyDate', 'role',
                 'page', 'copyDate',
@@ -338,13 +344,16 @@ class Registration(XMLParser):
                     tags.append(cls._package(extra_tag))
                 if tags:
                     extra[name] = tags
-               
+
         registration = Registration(
-            uuid, regnums, reg_dates, title, authors, notes,
-            publishers, previous_regnums, previous_publications,
-            extra, parent, warnings=warnings
+            uuid=uuid, regnums=regnums, reg_dates=reg_dates,
+            title=title, authors=authors, notes=notes,
+            publishers=publishers, previous_regnums=previous_regnums,
+            previous_publications=previous_publications,
+            extra=extra, parent=parent, warnings=warnings,
+            new_matter_claimed=new_matter_claimed
         )
-            
+
         children = []
         for child_tag in tag.xpath("additionalEntry"):
             for child_registration in cls.from_tag(child_tag, registration):
@@ -358,7 +367,10 @@ class Registration(XMLParser):
     INTERIM_PREFIXES = set(["AI", "AIO", "AI0"])
 
     PREVIOUSLY_PUBLISHED_ABROAD = re.compile("[pd]u[bt][.,]? abroad", re.I)
-    
+    PREVIOUSLY_PUBLISHED = re.compile("[pd]rev[.,]? [pd]u[bt]", re.I)
+    PREVIOUSLY_REGISTERED = re.compile("[pd]rev[.,]? reg", re.I)
+    PREVIOUSLY_SOMETHING = re.compile("[pd]rev[.,i]", re.I)
+
     def _regnum_is_foreign(self, regnum):
         if any(regnum.startswith(x) for x in self.FOREIGN_PREFIXES):
             self.warnings.append(
@@ -372,7 +384,42 @@ class Registration(XMLParser):
             return True
 
     @property
+    def previously_published(self):
+        """See if it looks like this work was previously published -- in which
+        case we'd need to manually check for earlier registrations
+        which may have been renewed.
+        """
+        if self.previous_publications:
+            return True
+
+        if self.new_matter_claimed:
+            self.warnings.append(
+                "New matter claimed (%s) implies the existence of a previous publication, which must be checked manually. New matter found in this title may be out of copyright even if the previous publication was renewed." % ", ".join(self.new_matter_claimed)
+            )
+            return True
+
+        for note in self.notes:
+            if self.PREVIOUSLY_PUBLISHED.search(note):
+                self.warnings.append(
+                    "Note (%r) seems to mention a previous publication, which must be checked manually." % note
+                )
+                return True
+            if self.PREVIOUSLY_REGISTERED.search(note):
+                self.warnings.append(
+                    "Note (%r) seems to mention a previous registration, which must be checked manually." % note
+                )
+                return True
+            if self.PREVIOUSLY_SOMETHING.search(note):
+                self.warnings.append(
+                    "Note (%r) seems to mention... something... happening previously, most likely a publication or registration. This must be checked manually." % note
+                )
+                return True
+
+        return False
+
+    @property
     def is_foreign(self):
+
         """See if it's possible to determine that this registration is for a
         foreign work, based solely on the metadata.
         """
@@ -387,18 +434,22 @@ class Registration(XMLParser):
             if self._regnum_is_foreign(prev_regnum):
                 return True
 
-        # Maybe the 'previous publication' information says that
-        # the work was previously published abroad, without giving
-        # a specific registration number.
-        for previous_publication in self.previous_publications:
-            if self.PREVIOUSLY_PUBLISHED_ABROAD.search(previous_publication):
-                self.warnings.append("Previous publication %r indicates work was previously published abroad." % previous_publication)
-                return True
-            if 'AI.' in previous_publication or 'AI-' in previous_publication:
-                self.warnings.append(
-                    "Previous publication '%s' seems to mention an interim registration." % previous_publication
-                )
-                return True
+        # Maybe the 'previous publication' information or the notes
+        # says that the work was previously published abroad, without
+        # giving a specific registration number.
+        for field, values in (
+                ("Previous publication", self.previous_publications),
+                ("Note", self.notes)
+        ):
+            for value in values:
+                if self.PREVIOUSLY_PUBLISHED_ABROAD.search(value):
+                    self.warnings.append("%s %r indicates work was previously published abroad." % (field, value))
+                    return True
+                if 'AI.' in value or 'AI-' in value:
+                    self.warnings.append(
+                        "%s '%s' seems to mention an interim registration." % (field, value)
+                    )
+                    return True
 
         # Maybe the book was published in a foreign place.
         for place in self.places:
@@ -407,28 +458,32 @@ class Registration(XMLParser):
                     "Publication place '%s' looks foreign." % place
                 )
                 return True
-           
+
         # Maybe a previous publication mentions certain keywords. These
         # are not terribly reliable, so we run this test last.
-        for previous_publication in self.previous_publications:
-            p = previous_publication.lower()
-            for keyword in [
-                'abroad', 'american ed.', 'american edition'
-            ]:
-                if keyword in p:
-                    self.warnings.append(
-                        "Previous publication %r mentions the keyword '%s', which indicates this _may_ have originally been a foreign publication." % (
-                            keyword, previous_publication
+        for field, values in (
+                ("Previous publication", self.previous_publications),
+                ("Note", self.notes)
+        ):
+            for value in values:
+                p = value.lower()
+                for keyword in [
+                        'abroad', 'american ed.', 'american edition'
+                ]:
+                    if keyword in p:
+                        self.warnings.append(
+                            "%s %r mentions the keyword '%s', which indicates this _may_ have originally been a foreign publication." % (
+                                field, value, keyword
+                            )
                         )
-                    )
-                return True
+                        return True
         return False
 
     DATE_AND_NUMBER_XREF = re.compile("([0-9]{,2}[A-Z][a-z]{2}[0-9]{2})[;,] ?(A[A-Z]?[0-9-]+)")
 
     NUMBER_AND_DATE_XREF = re.compile("(A[A-Z]?[0-9-]+)[;,] ?([0-9]{,2}[A-Z][a-z]{2}[0-9]{2})")
     POSSIBLE_NUMBER_XREF = re.compile("(A{1,2}[0-9-]{4,})")
-    
+
     @property
     def places(self):
         """All places mentioned in the context of where this book was published."""
@@ -437,7 +492,7 @@ class Registration(XMLParser):
                 yield place
 
     csv_row_labels = 'title parent_title author parent_author regnum parent_regnum claimants place_of_publication disposition warnings'.split()
-                
+
     @property
     def csv_row(self):
         publishers = [Publisher(**p) for p in self.publishers]
@@ -465,15 +520,15 @@ class Registration(XMLParser):
             parent_regnums = None
 
         base = [
-            self.title, parent_title, ", ".join(self.authors), parent_author, 
+            self.title, parent_title, ", ".join(self.authors), parent_author,
             ", ".join(self.regnums), parent_regnums, claimants, pub_places, self.disposition, "\n".join(self.warnings)
         ]
-            
-        for r in (self.renewals or []): 
+
+        for r in (self.renewals or []):
             r = Renewal(**r)
             base += r.csv_row
         return base
-                
+
     def parse_xrefs(self):
         """Look for cross-references to other registrations in the 'notes'
         field of this registration.
@@ -570,7 +625,7 @@ class Registration(XMLParser):
         if len(intersection) > (bigger * quotient):
             return True
         return False
-        
+
     def author_match(self, other_author):
         if not other_author:
             return False
@@ -578,16 +633,16 @@ class Registration(XMLParser):
             if self.words_match(a, other_author):
                 return True
         return False
-            
+
     def title_match(self, other_title):
         if self.words_match(self.title, other_title):
             return True
         return False
-        
+
 class Renewal(object):
 
     csv_row_labels = 'renewal_id renewal_date renewal_registration registration_date renewal_title renewal_author'.split()
-    
+
     def __init__(self, **data):
         self.data = data
 
@@ -602,12 +657,12 @@ class Renewal(object):
         return [
             self.data.get('renewal_id'),
             self.data.get('renewal_date'),
-            self.regnum, 
+            self.regnum,
             self.data.get('reg_date'),
             self.data.get('title'),
             self.data.get('author'),
         ]
-    
+
     REG_NUMBER = re.compile("A[A-Z]?-?[0-9]+")
 
     @property
@@ -616,12 +671,12 @@ class Renewal(object):
         if isinstance(r, list):
             return ", ".join(r)
         return r
-    
+
     @classmethod
     def extract_regnums(cls, x):
         t = x['full_text']
         return [x.replace("-", "") for x in cls.REG_NUMBER.findall(t)]
-    
+
     @classmethod
     def from_dict(cls, d):
         uuid = d['entry_id']
