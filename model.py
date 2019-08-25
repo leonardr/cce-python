@@ -285,6 +285,17 @@ class Registration(XMLParser):
             return x
         return x.jsonable(**kwargs)
 
+    @property
+    def renewal_key(self):
+        def to_set(x):
+            return " ".join(sorted(self._normalize_text(x).split()))
+        if not self.authors:
+            author = ""
+        else:
+            author = self.authors[0]
+        key = (to_set(self.title), to_set(author))
+        return key
+    
     @classmethod
     def from_json(cls, data):
         return cls(**data)
@@ -650,6 +661,12 @@ class Renewal(object):
     def jsonable(self):
         return self.data
 
+    @property
+    def renewal_key(self):
+        def to_set(x):
+            return Registration(Registration._normalize_text(x).split())
+        return (to_set(self.data['title']), to_set(self.data['author']))
+    
     def __getattr__(self, k):
         return self.data[k]
 
