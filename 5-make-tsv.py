@@ -20,6 +20,7 @@ spreadsheets = {
     "renewed" : ["renewed", "probably-renewed", "possibly-renewed"],
     "not-renewed": ["not-renewed"],
     "foreign": ["foreign"],
+    "previously-published": ["previously-published"],
 }
 
 for name, inputs in spreadsheets.items():
