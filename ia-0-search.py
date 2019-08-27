@@ -23,6 +23,9 @@ class IAClient(object):
     def process(self, input_file):
         for i in open(input_file):
             data = json.loads(i)
+            disposition = data['disposition']
+            if disposition.startswith('Renewed'):
+                continue
             self.process_data(data)
             json.dump(data, self.out)
             self.out.write("\n")
@@ -104,5 +107,5 @@ class IAClient(object):
             print(e)
             return
                 
-client = IAClient("output/6-ia-searches.ndjson")
+client = IAClient("output/ia-0-searches.ndjson")
 client.process("output/3-registrations-in-range.ndjson")
