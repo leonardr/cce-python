@@ -85,9 +85,12 @@ class Comparator(object):
         return title_quality - date_penalty - author_penalty
 
     def evaluate_titles(self, ia, registration):
-        # Same rules as for titles, but weighted less because author data is less reliable.
+        normalized_registration = self.normalize(registration)
+        if ia == normalized_registration:
+            # The titles are a perfect match.
+            return 1.2
         ia_words = set(ia.split())
-        registration_words = set(self.normalize(registration).split())
+        registration_words = set(normalized_registration.split())
         difference = ia_words.symmetric_difference(registration_words)
         if not ia_words and not registration_words:
             return 0 # avoid dividing by zero
