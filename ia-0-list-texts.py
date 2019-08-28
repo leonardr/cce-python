@@ -41,13 +41,14 @@ class IAClient(object):
         for i in search.iter_as_results():
             yield i
 
-output = open("output/ia-0-texts.json", "w")
+output = open("output/ia-0-texts.ndjson", "w")
 client = IAClient()
 
 # Get 10 years of texts on either side of the cutoff just to be safe.
 CUTOFF_YEAR = datetime.datetime.utcnow().year - 95 - 10
-CUTOFF_DATE = "%s-01-01" % CUTOFF_YEAR
-for i in client.search("date:[%s TO 1973-01-01]" % CUTOFF_DATE):
+START = "%s-01-01" % CUTOFF_YEAR
+FINISH = "1973-01-01"
+for i in client.search("date:[%s TO %s]" % (START, FINISH)):
     json.dump(i, output)
     output.write("\n")
     print(i.get("year"), i.get('title'), i.get("creator"))
