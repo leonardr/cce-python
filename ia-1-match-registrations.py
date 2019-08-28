@@ -45,7 +45,7 @@ class Comparator(object):
         key_matches = self.by_title_key[key]
         for ia_data in key_matches:
             quality = self.evaluate_match(ia_data, registration_data, registration_title)
-            if quality > 0.6:
+            if quality > 0:
                 yield registration_data, ia_data, quality
 
     def evaluate_match(self, ia_data, registration_data, registration_title):
@@ -84,39 +84,38 @@ class Comparator(object):
 
         return title_quality - date_penalty - author_penalty
 
+    def _set_similarity(self, s1, s2):
+        set1 = set(self.normalize(s1).split())
+        set2 = set(self.normalize(s2).split())
+        difference = set1.symmetric_difference(set2)
+        if not set1 and not set2:
+            # Empty sets are identical
+            return 1
+        return float(len(difference)) / (len(set1) + len(set2))
+
     def evaluate_titles(self, ia, registration):
         normalized_registration = self.normalize(registration)
         if ia == normalized_registration:
             # The titles are a perfect match.
             return 1.2
-        ia_words = set(ia.split())
-        registration_words = set(normalized_registration.split())
-        difference = ia_words.symmetric_difference(registration_words)
-        if not ia_words and not registration_words:
-            return 0 # avoid dividing by zero
-        v = (1 - float(len(difference)) / (len(ia_words) + len(registration_words)))
-        return v
+        return 1-self._set_similarity(ia, registration)
 
     def evaluate_years(self, ia, registration):
+        if ia == registration:
+            # Exact match gets a bonus.
+            return 0.2
         # A 10% penalty for every year of difference between the
         # registration year and the publication year according to IA.
         return abs(ia-registration) * 0.1
 
     def evaluate_authors(self, ia, registration):
-        ia_words = set(self.normalize(ia).split())
-        registration_words = set(self.normalize(registration).split())
-        difference = ia_words.symmetric_difference(registration_words)
-        if not ia_words and not registration_words:
-            return 0 # avoid dividing by zero
-        v = 1 - float(len(difference)) / (len(ia_words) + len(registration_words)) * 0.2
-        return v
+        return 1-self._set_similarity(ia, registration) * 0.2
 
 comparator = Comparator("output/ia-0-texts.ndjson")
+output = open("output/ia-1-matched.ndjson", "w")
 for i in open("output/FINAL-not-renewed.ndjson"):
     data = json.loads(i)
     for registration, ia, quality in comparator.matches(data):
-        print(quality)
-        print(ia)
-        print(registration)
-        print("-" * 80)
-
+        output_data = dict(quality=quality, ia=ia, cce=registration)
+        json.dump(output_data, output)
+        output.write("\n")
