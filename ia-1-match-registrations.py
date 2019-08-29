@@ -1,6 +1,7 @@
 import Levenshtein as lev
 from pdb import set_trace
 from model import Registration
+import datetime
 import re
 import json
 from collections import defaultdict
@@ -9,8 +10,15 @@ from collections import defaultdict
 # IA side.
 MATCH_CUTOFF = 50
 
+# Only output potential matches if the quality score is above this level.
+QUALITY_CUTOFF = 0
+
+# Stuff published before this year is public domain.
+CUTOFF_YEAR = datetime.datetime.today().year - 95
+
 class Comparator(object):
 
+    NON_ALPHABETIC = re.compile("[\W0-9]", re.I + re.UNICODE)
     NON_ALPHANUMERIC = re.compile("[\W_]", re.I + re.UNICODE)
     MULTIPLE_SPACES = re.compile("\s+")
 
@@ -28,6 +36,8 @@ class Comparator(object):
     def __init__(self, ia_text_file):
         self.by_title_key = defaultdict(list)
         self._normalized = dict()
+        self._normalized_names = dict()
+        self._name_words = dict()
         for i, raw in enumerate(open(ia_text_file)):
             data = json.loads(raw)
             license_url = data.get('licenseurl')
@@ -37,6 +47,15 @@ class Comparator(object):
             ):
                 # This is already open-access; don't consider it.
                 continue
+
+            year = data.get('year')
+            if int(year) > 1963+5 or int(year) < CUTOFF_YEAR:
+                # Don't consider works published more than 5 years out
+                # of the range we're considering. That's plenty of
+                # time to publish the work you registered, or to register
+                # the work you published.
+                continue
+
             authors = data.get('creator', [])
             if not isinstance(authors, list):
                 authors = [authors]
@@ -67,28 +86,68 @@ class Comparator(object):
         text = self.MULTIPLE_SPACES.sub(" ", text)
 
         # Remove substrings that cause more false positives than
-        # they're worth.
+        # they're worth. These books need to be dealt with specially.
         for ignorable in (
-                'telephone directory',
-                'telephone directories',                
-                'annual report',
-                'special report',
-                'proceedings of',
-                'proceedings',
-                'general catalog',
-                'catalog',
-                'report',
-                'questions and answers',
+            'telephone directory',
+            'telephone directories',                
+            'annual report',
+            'special report',
+            'proceedings of',
+            'proceedings',
+            'general catalog',
+            'catalog',
+            'report',
+            'questions and answers',
+            'transactions',
+            'yearbook',
+            'year book',
+            'selected poems',
+            'poems',
+            'bulletin',
+            'papers',
         ):
             # remove "catalog 1955"
             text = re.compile("%s [0-9]+" % ignorable).sub("", text)
             # remove "catalog"
             text = text.replace(ignorable, '')
 
+        # Just ignore these stopwords -- they're commonly missing or
+        # duplicated.
+        for ignorable in (
+            ' the ',
+            ' a ',
+            ' an ',
+        ):
+            text = text.replace(ignorable, '')
+
         text = self.MULTIPLE_SPACES.sub(" ", text)
         text = text.strip()
         self._normalized[original] = text
         return text
+
+    def normalize_name(self, name):
+        if not name:
+            return None
+        # Normalize a person's name.
+        original = name
+        if original in self._normalized_names:
+            return self._normalized_names[original]
+        name = name.lower()
+        name = self.NON_ALPHABETIC.sub(" ", name)
+        name = self.MULTIPLE_SPACES.sub(" ", name)
+        name = name.strip()
+        self._normalized_names[original] = name
+        return name
+
+    def name_words(self, name):
+        if not name:
+            return None
+        original = name
+        if original in self._name_words:
+            return self._name_words[original]
+        words = sorted(name.split())
+        self._name_words[original] = words
+        return words
 
     def title_key(self, normalized_title):
         words = [x for x in normalized_title.split(" ") if x]
@@ -128,30 +187,18 @@ class Comparator(object):
         registration_authors = registration.authors or []
         ia_author = ia_data.get('creator')
         if registration_authors and ia_author:
-            registration_author = registration_authors[0]
             author_penalty = self.evaluate_authors(
-                ia_author, registration_author
+                ia_author, registration_authors
             )
-            if ' ' not in registration_title:
+            if ' ' not in registration_title and author_penalty > 0:
                 # This is a book with a very short title like "Poems".
                 # Author information is relatively more important here,
-                author_penalty *= 2
+                author_penalty *= 5
         else:
             # Author data is missing from registration. Ignore it.
             author_penalty = 0
 
         return title_quality - date_penalty - author_penalty
-
-    def _set_similarity(self, s1, s2):
-        s1 = self.normalize(s1)
-        s2 = self.normalize(s2)
-        set1 = set(s1.split())
-        set2 = set(s2.split())
-        difference = set1.symmetric_difference(set2)
-        if not set1 and not set2:
-            # Empty sets are identical
-            return 1
-        return 1 - (float(len(difference)) / (len(set1) + len(set2)))
 
     def evaluate_titles(self, ia, registration):
         normalized_registration = self.normalize(registration)
@@ -160,29 +207,89 @@ class Comparator(object):
         if ia == normalized_registration:
             # The titles are a perfect match. Give a bonus.
             return 1.2
-        if normalized_registration in ia and ' ' in normalized_registration:
-            # This may be a scenario where the IA book is volume 3 of 
-            # the original book.
-            return 1
 
-        distance = lev.distance(ia, normalized_registration)
-        longer_string = len(ia), len(normalized_registration))
-        proportion_of_changes = 1-(distance / float(longer_string))
-        return proportion_of_changes
-        #return self._set_similarity(ia, registration)
+        # Calculate the Levenshtein distance between the two strings,
+        # as a proportion of the length of the longer string.
+        #
+        # This ~ the quality of the title match.
+
+        # If you have to change half of the characters to get from one
+        # string to another, that's a score of 50%, which isn't
+        # "okay", it's really bad.  Multiply the distance by a
+        # constant to reflect this.
+        distance = lev.distance(ia, normalized_registration) * 1.5
+        longer_string = max(len(ia), len(normalized_registration))
+        proportional_changes = distance / float(longer_string)
+
+        proportional_distance = 1-(proportional_changes)
+        return proportional_distance
 
     def evaluate_years(self, ia, registration):
         if ia == registration:
             # Exact match gets a slight negative penalty -- a bonus.
             return -0.01
-        # A 15% penalty for every year of difference between the
+        # A 10% penalty for every year of difference between the
         # registration year and the publication year according to IA.
-        return abs(ia-registration) * 0.15
+        return abs(ia-registration) * 0.10
 
-    def evaluate_authors(self, ia, registration):
-        # We don't expect authors to match at all, so we don't
-        # weight the penalty very highly
-        return (1 - self._set_similarity(ia, registration)) * 0.2
+    def evaluate_authors(self, ia_authors, registration_authors):
+        if not ia_authors or not registration_authors:
+            # We don't have the information necessary to match
+            # up authors. No penalty.
+            return 0
+
+        # Return the smallest penalty for the given list of authors.
+        if not isinstance(ia_authors, list):
+            ia_authors = [ia_authors]
+        if not isinstance(registration_authors, list):
+            registration_authors = [registration_authors]
+
+        penalties = []
+        for ia in ia_authors:
+            for ra in registration_authors:
+                penalty = self.evaluate_author(ia, ra)
+                if penalty is not None:
+                    penalties.append(penalty)
+        if not penalties:
+            # We couldn't figure it out. No penalty.
+            return 0
+
+        # This will find the largest negative penalty (bonus) or the
+        # smallest positive penalty.
+        return min(penalties)
+
+    def evaluate_author(self, ia_author, registration_author):
+        # Determine the size of the rating penalty due to the mismatch
+        # between these two authors.
+        ia_author = self.normalize_name(ia_author)
+        registration_author = self.normalize_name(registration_author)
+
+        if not ia_author or not registration_author:
+            # We just don't know.
+            return None
+
+        if ia_author == registration_author:
+            # Exact match gets a negative penalty -- a bonus.
+            return -0.25
+
+        ia_words = self.name_words(ia_author)
+        registration_words = self.name_words(registration_author)
+        if ia_words == registration_words:
+            # These are probably the same author. Return a negative
+            # penalty -- a bonus.
+            return -0.2
+
+        distance = lev.distance(ia_author, registration_author)
+        longer_string = max(len(ia_author), len(registration_author))
+        proportional_changes = distance / float(longer_string)
+        penalty = 1 - proportional_changes
+
+        if penalty > 0:
+            # Beyond "there are a couple of typoes" the Levenshtein
+            # distance just means there's no match, so we cap the
+            # penalty at a pretty low level.
+            penalty = min(penalty, 0.1)
+        return penalty
 
 comparator = Comparator("output/ia-0-texts.ndjson")
 output = open("output/ia-1-matched.ndjson", "w")
@@ -209,6 +316,8 @@ for filename in ("FINAL-not-renewed.ndjson", "FINAL-possibly-renewed.ndjson"):
             )
         for registration, ia, quality in matches:
             quality = quality * num_matches_coefficient
+            if quality <= QUALITY_CUTOFF:
+                continue
             output_data = dict(
                 quality=quality, ia=ia, cce=registration.jsonable()
             )
