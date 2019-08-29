@@ -33,6 +33,26 @@ class Comparator(object):
         "Central Intelligence Agency"
     ])
 
+    GENERIC_TITLES = (
+        'annual report',
+        'special report',
+        'proceedings of',
+        'proceedings',
+        'general catalog',
+        'catalog',
+        'report',
+        'questions and answers',
+        'transactions',
+        'yearbook',
+        'year book',
+        'selected poems',
+        'poems',
+        'bulletin',
+        'papers',
+    )
+    GENERIC_TITLES_RE = re.compile("(%s)" % "|".join(GENERIC_TITLES))
+    TOTALLY_GENERIC_TITLES_RE = re.compile("^(%s)$" % "|".join(GENERIC_TITLES))
+
     def __init__(self, ia_text_file):
         self.by_title_key = defaultdict(list)
         self._normalized = dict()
@@ -68,6 +88,20 @@ class Comparator(object):
             key = self.title_key(title)
             self.by_title_key[key].append(data)
 
+    def generic_title_penalties(self, title):
+        # A generic-looking title means that an author match 
+        # and a close date match is relatively more important.
+        title = self.normalize(title)
+        if "telephone director" in title:
+            # Telephone directories are uniquely awful, and they're
+            # published every year. Hold them to the highest standards.
+            return 7, 1.0, 7
+        if self.TOTALLY_GENERIC_TITLES_RE.match(title): 
+            return 6, 0.8, 5
+        if self.GENERIC_TITLES_RE.match(title):
+            return 4, 0.7, 4
+        return 1, 0, 1
+
     def normalize(self, text):
         if isinstance(text, list):
             if len(text) == 2:
@@ -85,32 +119,6 @@ class Comparator(object):
         text = self.NON_ALPHANUMERIC.sub(" ", text)
         text = self.MULTIPLE_SPACES.sub(" ", text)
 
-        # Remove substrings that cause more false positives than
-        # they're worth. These books need to be dealt with specially.
-        for ignorable in (
-            'telephone directory',
-            'telephone directories',                
-            'annual report',
-            'special report',
-            'proceedings of',
-            'proceedings',
-            'general catalog',
-            'catalog',
-            'report',
-            'questions and answers',
-            'transactions',
-            'yearbook',
-            'year book',
-            'selected poems',
-            'poems',
-            'bulletin',
-            'papers',
-        ):
-            # remove "catalog 1955"
-            text = re.compile("%s [0-9]+" % ignorable).sub("", text)
-            # remove "catalog"
-            text = text.replace(ignorable, '')
-
         # Just ignore these stopwords -- they're commonly missing or
         # duplicated.
         for ignorable in (
@@ -119,8 +127,6 @@ class Comparator(object):
             ' an ',
         ):
             text = text.replace(ignorable, '')
-
-        text = self.MULTIPLE_SPACES.sub(" ", text)
         text = text.strip()
         self._normalized[original] = text
         return text
@@ -183,20 +189,28 @@ class Comparator(object):
             date_penalty = self.evaluate_years(ia_year, registration_date.year)
 
         # A penalty is applied if the authors are clearly divergent,
-        # but it's quite common so we don't make a big deal of it.
+        # but it's quite common so we don't usually make a big deal of it.
         registration_authors = registration.authors or []
         ia_author = ia_data.get('creator')
         if registration_authors and ia_author:
             author_penalty = self.evaluate_authors(
                 ia_author, registration_authors
             )
-            if ' ' not in registration_title and author_penalty > 0:
-                # This is a book with a very short title like "Poems".
-                # Author information is relatively more important here,
-                author_penalty *= 5
         else:
             # Author data is missing from registration. Ignore it.
             author_penalty = 0
+
+        # A generic-looking title has a correspondingly greater emphasis on
+        # an author match and a close year match.
+        author_penalty_multiplier, author_base_penalty, year_penalty_multiplier = self.generic_title_penalties(
+            registration_title
+        )
+        if author_penalty == 0:
+            author_penalty = author_base_penalty
+        elif author_penalty > 0:
+            author_penalty *= author_penalty_multiplier
+        if date_penalty > 0:
+            date_penalty *= year_penalty_multiplier
 
         return title_quality - date_penalty - author_penalty
 
@@ -205,8 +219,15 @@ class Comparator(object):
         if not normalized_registration:
             return -1
         if ia == normalized_registration:
-            # The titles are a perfect match. Give a bonus.
-            return 1.2
+            # The titles are a perfect match. Give a bonus -- unless
+            # the title is also generic. That's not very impressive.
+            a, b, c = self.generic_title_penalties(title)
+            if a == 1:
+                # Not generic.
+                return 1.2
+            else:
+                # Generic.
+                return 1
 
         # Calculate the Levenshtein distance between the two strings,
         # as a proportion of the length of the longer string.
@@ -228,14 +249,17 @@ class Comparator(object):
         if ia == registration:
             # Exact match gets a slight negative penalty -- a bonus.
             return -0.01
-        # A 10% penalty for every year of difference between the
+        # Apply a penalty for every year of difference between the
         # registration year and the publication year according to IA.
-        return abs(ia-registration) * 0.10
+        # The penalty has a slight exponential element -- 5 years in
+        # either direction really should be enough for a match.
+        return (abs(ia-registration) ** 1.1) * 0.1
 
     def evaluate_authors(self, ia_authors, registration_authors):
         if not ia_authors or not registration_authors:
-            # We don't have the information necessary to match
-            # up authors. No penalty.
+            # We don't have the information necessary to match up
+            # authors. No penalty (though if the title is generic, a
+            # base penalty will be applied.)
             return 0
 
         # Return the smallest penalty for the given list of authors.
@@ -285,10 +309,10 @@ class Comparator(object):
         penalty = 1 - proportional_changes
 
         if penalty > 0:
-            # Beyond "there are a couple of typoes" the Levenshtein
-            # distance just means there's no match, so we cap the
-            # penalty at a pretty low level.
-            penalty = min(penalty, 0.1)
+            # Beyond "a couple typoes", the Levenshtein distance
+            # basically means there's no match, so we cap the penalty
+            # at a pretty low level.
+            penalty = min(penalty, 0.20)
         return penalty
 
 comparator = Comparator("output/ia-0-texts.ndjson")
