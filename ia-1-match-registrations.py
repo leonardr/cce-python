@@ -318,7 +318,7 @@ class Comparator(object):
 comparator = Comparator("output/ia-0-texts.ndjson")
 output = open("output/ia-1-matched.ndjson", "w")
 
-for filename in ("FINAL-not-renewed.ndjson", "FINAL-possibly-renewed.ndjson"):
+for filename in ["FINAL-not-renewed.ndjson"]: #"FINAL-possibly-renewed.ndjson"]:
     for i in open("output/%s" % filename):
         cce = Registration.from_json(json.loads(i))
         title = cce.title
