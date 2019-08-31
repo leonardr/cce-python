@@ -11,7 +11,7 @@ else:
 
 counter = Counter()
 
-output = open("output/ia-2-matches-%s.tsv" % cutoff, "wb")
+output = open("output/hathi-1-matches-%s.tsv" % cutoff, "wb")
 out = unicodecsv.writer(output, dialect="excel-tab", encoding="utf-8")
 
 csv_row_labels = 'decision title author year id match_quality disposition'.split()
@@ -33,7 +33,7 @@ class Package(object):
         out.writerow([])
 
 packages = []
-for i in open("output/ia-1-matched.ndjson"):
+for i in open("output/hathi-0-matched.ndjson"):
     data = json.loads(i)
     quality = data['quality']
     if quality < cutoff:
@@ -41,18 +41,16 @@ for i in open("output/ia-1-matched.ndjson"):
 
     quality = round(quality,2)
 
-    ia = data['ia']
+    hathi = data['hathi']
     cce = Registration(**data['cce'])
 
-    ia_id = "https://archive.org/details/" + ia['identifier']
+    hathi_link = "https://catalog.hathitrust.org/Record/%s" % hathi['identifier']
     cce_id = cce.uuid
 
-    ia_title = ia['title']
+    hathi_title = hathi['title']
     cce_title = cce.title
-    
-    ia_author = ia.get('creator') or ia.get('creatorSorter') or ""
-    if isinstance(ia_author, list):
-        ia_author = "; ".join(ia_author)
+
+    hathi_author = hathi.get('author')
     cce_authors = cce.authors or []
     for pub in cce.publishers:
         claimants = pub.get('claimants')
@@ -68,14 +66,14 @@ for i in open("output/ia-1-matched.ndjson"):
                     cce_authors.append(i)
     cce_author = "; ".join(cce_authors)
 
-    ia_year = ia['year']
+    hathi_year = hathi['year']
     cce_year = cce.best_guess_registration_date.year
 
     disposition = cce.disposition
 
-    ia_row = ["", ia_title, ia_author, ia_year, ia_id, quality, ""]
+    hathi_row = ["", hathi_title, hathi_author, hathi_year, hathi_link, quality, ""]
     cce_row = ["", cce_title, cce_author, cce_year, cce_id, "", disposition]
-    packages.append(Package(ia_row, cce_row))
+    packages.append(Package(hathi_row, cce_row))
     counter[quality] += 1
 
 for package in sorted(packages, key=lambda x: x.sort_key):    

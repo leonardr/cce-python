@@ -298,4 +298,56 @@ are the possible dispositions:
 
 * `Error.` - The data associated with this registration was missing
   essential information, and it couldn't be processed.
-  
+
+# Matching scripts
+
+This repository includes two more sets of scripts, which do
+quick-and-dirty matching of unrenewed registrations against two large
+sources of scanned books: the Internet Archive and Hathi Trust.
+
+This scripts take `FINAL-not-renewed.ndjson` as their input, so you'll
+need to run the entire main sequence first.
+
+The final output of each script sequence is a TSV file designed to
+make it easy to compare a registration against its supposed online
+scan. Each supposed match is given a quality score. A higher score
+indicates a higher degree of confidence that the two records are
+referring to the same publication of the same book.
+
+This scripts are less polished than the main script sequence.
+
+## Internet Archive matching scripts
+
+### `ia-0-list-texts.py`
+
+This script uses the Internet Archive API to download basic
+information about every scanned book in the system.
+
+### `ia-1-match-registrations.py`
+
+This script does its best to match copyright registrations against the
+Internet Archive metadata downloaded by the previous script.
+
+### `ia-2-output.py`
+
+This script writes a report on likely matches in tab-separated
+format.
+
+It takes a single command-line argument: the quality cutoff
+point. Quality scores range from zero to about 1.6, with higher
+numbers being better. The default value of 0.2 will give you most
+likely matches, but you can raise it higher or lower.
+
+## Hathi Trust matching scripts
+
+### `hathi-0-match-registrations.py`
+
+This script does its best to match copyright registrations against
+Hathi Trust metadata. This script takes a single command-line
+argument: the path to an unzipped
+[Hathifile](https://www.hathitrust.org/hathifiles).
+
+### `hathi-1-output.py`
+
+This script writes a report on likely matches in tab-separated
+format. It works exactly the same way as `ia-1-output.py`.
