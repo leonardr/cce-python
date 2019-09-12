@@ -337,8 +337,6 @@ class Registration(XMLParser):
         previous_publications = cls.xpath(tag, "prevPub")
 
         new_matter_claimed = cls.xpath(tag, "newMatterClaimed")
-        if new_matter_claimed:
-            print(new_matter_claimed)
 
         # We'll parse out these items and store the data, but they're
         # not currently important to the clearance process.
