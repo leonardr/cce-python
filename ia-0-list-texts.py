@@ -1,6 +1,8 @@
-from pdb import set_trace
 import datetime
+from pdb import set_trace
+from dateutil.parser import parse
 import json
+import sys
 import internetarchive as ia
 
 class IAClient(object):
@@ -29,10 +31,10 @@ class IAClient(object):
         return cls._session
            
     @classmethod
-    def search(cls, query, *args, **kwargs):
+    def search(cls, query, cutoff_date=None, *args, **kwargs):
         """Search Internet Archive items."""
         fields = cls.FIELDS
-        sorts = ["date asc"]
+        sorts = ["publicdate desc"]
         query = query + " and mediatype:texts"
         search = ia.search.Search(
             cls.session(), query, *args, fields=fields, sorts=sorts,
@@ -40,17 +42,33 @@ class IAClient(object):
             **kwargs
         )
         for i in search.iter_as_results():
+            if cutoff_date:
+                public_date = parse(i['publicdate'])
+                if public_date < cutoff_date:
+                    # This item was made public before the cutoff
+                    # date. We're all done.
+                    return
             yield i
 
 output = open("output/ia-0-texts.ndjson", "w")
 client = IAClient()
 
+# We may only want to get books that were scanned after a certain date.
+if len(sys.argv) > 1:
+    scan_cutoff_date = parse(sys.argv[1])
+else:
+    scan_cutoff_date = None
+
 # Get 10 years of texts on either side of the cutoff just to be safe.
 CUTOFF_YEAR = datetime.datetime.utcnow().year - 95 - 10
 START = "%s-01-01" % CUTOFF_YEAR
 FINISH = "1973-01-01"
-for i in client.search("date:[%s TO %s]" % (START, FINISH)):
+count = 0
+for i in client.search("date:[%s TO %s]" % (START, FINISH), scan_cutoff_date):
     json.dump(i, output)
     output.write("\n")
-    print(i.get("year"), i.get('title'), i.get("creator"))
-
+    count += 1
+    # print(i.get("year"), i.get('title'), i.get("creator"))
+    if not count % 1000:
+        print(count)
+print("Total items: %d" % count)
